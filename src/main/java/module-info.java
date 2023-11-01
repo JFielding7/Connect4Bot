@@ -3,6 +3,6 @@ module com.example.connect4bot {
     requires javafx.fxml;
 
 
-    opens com.example.connect4bot to javafx.fxml;
-    exports com.example.connect4bot;
+    opens connect4bot to javafx.fxml;
+    exports connect4.connect4bot;
 }
