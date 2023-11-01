@@ -4,5 +4,5 @@ module com.example.connect4bot {
 
 
     opens connect4bot to javafx.fxml;
-    exports connect4.connect4bot;
+    exports connect4bot;
 }
