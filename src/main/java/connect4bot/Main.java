@@ -1,4 +1,4 @@
-package connect4.connect4bot;
+package connect4bot;
 
 import java.util.Arrays;
 
@@ -82,4 +82,8 @@ public class Main {
         System.out.println(Long.toBinaryString(flippedGrid));
         return flippedGrid;
     }
+
+
+
+
 }

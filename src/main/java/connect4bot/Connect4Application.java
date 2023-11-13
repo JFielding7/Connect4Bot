@@ -1,4 +1,4 @@
-package connect4.connect4bot;
+package connect4bot;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -10,7 +10,7 @@ import java.io.IOException;
 public class Connect4Application extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(Connect4Application.class.getResource("hello-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(Connect4Application.class.getResource("connect4.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Connect Four");
         stage.setScene(scene);
