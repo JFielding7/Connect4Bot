@@ -6,10 +6,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.shape.Circle?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:id="bg" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.Connect4Controller">
    <children>
-      <GridPane layoutX="67.0" layoutY="35.0" prefHeight="330.0" prefWidth="465.0" style="-fx-background-color: blue;">
+      <GridPane layoutX="67.0" layoutY="35.0" opacity="0.18" prefHeight="330.0" prefWidth="465.0" style="-fx-background-color: blue;">
         <columnConstraints>
             <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -69,7 +68,7 @@
             <Circle fill="WHITE" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" GridPane.columnIndex="3" GridPane.rowIndex="5" />
             <Circle fill="WHITE" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" GridPane.columnIndex="4" GridPane.rowIndex="5" />
             <Circle fill="WHITE" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" GridPane.columnIndex="5" GridPane.rowIndex="5" />
-            <Circle fill="WHITE" radius="25.0" strokeType="INSIDE" strokeWidth="0.0" GridPane.columnIndex="6" GridPane.rowIndex="5" />
+            <Circle fill="WHITE" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" GridPane.columnIndex="6" GridPane.rowIndex="5" />
          </children>
       </GridPane>
    </children>
