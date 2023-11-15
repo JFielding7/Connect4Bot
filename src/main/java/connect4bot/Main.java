@@ -173,7 +173,7 @@ public class Main {
             return maxEval;
         }
         else{
-            int minEval = 1;
+            int minEval = 1;;
             for (long move : moves) {
                 int eval = evaluatePosition(move, 1, bestEval1, bestEval2, movesMade + 1);
                 minEval = Math.min(minEval, eval);
