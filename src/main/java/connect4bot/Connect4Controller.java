@@ -31,35 +31,35 @@ public class Connect4Controller implements Initializable {
         Rectangle rect = new Rectangle();
         rect.setHeight(330);
         rect.setWidth(465);
-        rect.setLayoutX(67);
+        rect.setLayoutX(70);
         rect.setLayoutY(35);
         board = rect;
         for(int i=0; i<R; i++) {
             for(int j=0; j<C; j++) {
-                Circle c = new Circle();
-                c.setRadius(25);
-                c.setCenterX(103+65*j);
-                c.setCenterY(62+55*i);
-                board = Shape.subtract(board, c);
+                board = Shape.subtract(board, piece("red", 106+65*j, 62+55*i));
             }
         }
         board.setFill(Color.BLUE);
-        board.setId("board");
         bg.getChildren().add(board);
     }
 
     public void translateTest() {
         double dur = 1;
 
-        Circle c = new Circle();
-        c.setRadius(25);
-        c.setCenterX(103+3*65);
-        c.setCenterY(7);
+        Circle c = piece("red", 106+3*65, 7);
         bg.getChildren().add(c);
         c.toBack();
-        c.setFill(Color.RED);
         TranslateTransition tr = new TranslateTransition(Duration.seconds(dur), c);
         tr.setByY(330);
         tr.play();
+    }
+
+    public Circle piece(String color, double x, double y) {
+        Circle c = new Circle();
+        c.setRadius(25);
+        c.setCenterX(x);
+        c.setCenterY(y);
+        c.setFill(Color.valueOf(color));
+        return c;
     }
 }
