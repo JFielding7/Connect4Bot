@@ -15,8 +15,8 @@ public class Piece {
         return p==0;
     }
 
-    public byte getBit() {
-        return (byte) (p==1 ? 1 : 0);
+    public int getBit() {
+        return (p==1 ? 1 : 0);
     }
 
     public String toString() {
