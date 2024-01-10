@@ -1,5 +1,6 @@
 package connect4bot;
 
+import java.io.*;
 import java.util.*;
 
 public class Main {
@@ -72,75 +73,28 @@ public class Main {
 
     static Random rand = new Random(42);
 
-    static HashSet<Long> wins = new HashSet<>();
     static int[] colPriority = {5, 3, 1, 0, 2, 4, 6};
 
-    static int eval(long state, long[] threats, int piece, int alpha, int beta, int movesMade) {
-        x++;
-        if(x % 10000000 == 0) {
-            System.out.println(x);
-            System.out.println(Arrays.toString(frequency));
-            System.out.println(states.size());
-        }
-        if (movesMade == 42) return 0;
-        if(states.containsKey(state)) return states.get(state);
-        ArrayList<long[]> moveOrder = new ArrayList<>();
-        long[][] nextThreats = new long[7][8];
-        for(int col = 0; col < 7; col++) {
-            int height = (int) (state >>> 42 + col * 3 & 0b111);
-            if (height == 6) continue;
-            long next = state + (1L << 42 + col * 3);
-            int playerOffset = 4, opponentOffset = 0;
-            if(piece == 1) {
-                next += 1L << col * 6 + height;
-                playerOffset = 0;
-                opponentOffset = 4;
-            }
-            long[] moveThreats = Arrays.copyOf(threats, 8);
-            long heuristic = 0;
-            for (int i = 0; i < 4; i++) {
-                for (int shift : SHIFTS[i][col * 6 + height]) {
-                    long oppConnect = threats[i + opponentOffset] >>> shift & 0b11;
-                    if (oppConnect != 0) {
-                        moveThreats[i + opponentOffset] -= oppConnect << shift;
-                        if (oppConnect == 3) heuristic++;
-                    }
-                    else {
-                        int connections = (int) (moveThreats[i + playerOffset] >>> shift & 0b11);
-                        if (connections == 3) {
-                            return 1;
-                        }
-                        if (connections == 2) heuristic++;
-                        moveThreats[i + playerOffset] += 1L << shift;
-                    }
-                }
-            }
-            nextThreats[col] = moveThreats;
-            moveOrder.add(new long[]{heuristic, next, col});
-        }
-        moveOrder.sort((a, b) -> 1 == 1 ? colPriority[(int) a[2]] - colPriority[(int) b[2]] : (int) b[0] - (int) a[0]);
-        int maxEval = -1;
-        int idx = 0;
-        for(long[] move : moveOrder) {
-            int eval = -eval(move[1], nextThreats[(int) move[2]], piece ^ 1, -beta, -alpha, movesMade + 1);
-            alpha = Math.max(alpha, eval);
-            maxEval = Math.max(maxEval, eval);
-            if (alpha >= beta) {
-                frequency[idx]++;
-                if(alpha == 1) states.put(state, alpha);
-                return alpha;
-            }
-            idx++;
-        }
-        states.put(state, maxEval);
-        return maxEval;
-    }
-
     static int x = 0;
+    static int[] depths = new int[43];
 
-    public static void main(String[] args) {
+    static void loadCache(HashSet<Long> cache, String file) {
+        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
+            String line = in.readLine();
+            while (line != null) {
+                cache.add(Long.parseLong(line));
+                line = in.readLine();
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void main(String[] args) throws FileNotFoundException {
 //        System.out.println(eval(0, new long[8], 1, -1, 1, 0));
 //        System.out.println(x);
+//        System.out.println(decode(7905688004349874817L));
+//        System.out.println(configIndex(7905688004349874817L));
 //        System.exit(0);
         String p3 =  "   0   \n" +
                      "  01   \n" +
@@ -149,23 +103,90 @@ public class Main {
                      " 01010 \n" +
                      "110110 \n";
 
-        String p1 =  "   0   \n" +
-                     "   1   \n" +
-                     "   0   \n" +
-                     "   1   \n" +
-                     "   0   \n" +
-                     "   1   \n";
-//        System.exit(0);
+        String p1 =  "       \n" +
+                     "       \n" +
+                     "       \n" +
+                     "       \n" +
+                     "       \n" +
+                     "       \n";
+        loadCache(wins, "wins.txt");
+        loadCache(losses, "losses.txt");
+        loadCache(alphaVals, "alpha.txt");
+        loadCache(betaVals, "beta.txt");
+        loadCache(wins, "wins2.txt");
+        loadCache(losses, "losses2.txt");
+        loadCache(alphaVals, "alpha2.txt");
+        loadCache(betaVals, "beta2.txt");
+        System.out.println(alphaVals.size());
+        long pos = encode(p1);
+        System.out.println(pos);
+        System.out.println(wins.contains(pos));
 //        System.out.println(Arrays.toString(heuristic(3, 0, 0, 0, 0, 0, 0, 0)));
 //        System.out.println(decode(1254287681036484608L));
 //        System.out.println(decode(1398402870186082304L));
+        Arrays.fill(cache, -1);
+        Arrays.fill(upper, -1);
+        Arrays.fill(lower, -1);
         int moves = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
+//        loadAlphaValues();
         long time = System.currentTimeMillis();
-//        generatePositions(0, 1, 7);
-        System.out.println(evaluatePosition(encode(p1), 1 - (moves & 1), -1, 1, moves));
+        System.out.println(evaluatePosition(encode(p1), (moves & 1) ^ 1, -1, 1, moves));
+//        try {
+//            winsPW = new PrintWriter(" ");
+//            lossesPW = new PrintWriter(" ");
+//            alphaPW = new PrintWriter(" ");
+//            betaPW = new PrintWriter(" ");
+//            System.out.println(evaluatePosition(encode(p1), 0, -1, 1, moves));
+//            winsPW.close();
+//            lossesPW.close();
+//            alphaPW.close();
+//            betaPW.close();
+//        }
+//        catch (IOException ignored) {}
         System.out.println(System.currentTimeMillis() - time);
+//        saveAlphaValues(encode(p1), 1 - (moves & 1), moves);
         System.out.println(x);
+        System.out.println(Arrays.toString(depths));
         System.out.println(Arrays.toString(frequency));
+//        int count = 0;
+//        int total = 0;
+//        int[] sizes = new int[7];
+//        for (HashSet<Integer> arr : bestMoves) {
+//            if (!arr.isEmpty()) {
+//                count++;
+//                total += arr.size();
+//                sizes[arr.size()]++;
+//            }
+//        }
+//        System.out.println(total + " " + count);
+//        System.out.println(Arrays.toString(sizes));
+    }
+    //[0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 14, 12, 31, 103, 221, 609, 1132, 2817, 5540, 11675, 23435, 42597, 79814, 131994, 224193, 342296, 517426, 737723, 1023747, 1392726, 1775082, 2311850, 2631548, 3280662, 3365916, 4151838, 3792212, 4506456, 3420493, 3707670, 2216615, 2020585, 1331068]
+    //[0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 14, 12, 39, 141, 345, 956, 1721, 4035, 7471, 15056, 28431, 50391, 91604, 147889, 249264, 373266, 566003, 793653, 1103867, 1480473, 1881857, 2423621, 2749868, 3406374, 3488409, 4280799, 3908931, 4622723, 3514615, 3790147, 2277260, 2089721, 1389495]
+    //[8, 11, 7, 6, 5, 0, 0]
+    static HashMap<Long, Integer> alphaCache = new HashMap<>();
+
+    static void saveAlphaValues(long state, int piece, int depth) throws FileNotFoundException {
+        try (PrintWriter out = new PrintWriter("alphaValues.txt")) {
+            evaluatePosition(state, piece, -1, 1, depth);
+            for (long pos : alphaCache.keySet()) {
+                out.println(pos + " " + alphaCache.get(pos));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static void loadAlphaValues() {
+        try (BufferedReader in = new BufferedReader(new FileReader("alphaValues.txt"))) {
+            for (String line = in.readLine(); line != null; line = in.readLine()) {
+                String[] data = line.split(" ");
+                alphaCache.put(Long.parseLong(data[0]), Integer.parseInt(data[1]));
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static int[] frequency = new int[7];
@@ -244,37 +265,50 @@ public class Main {
         return state + (1L << 42 + col * 3);
     }
 
-    static boolean isWin(long state, int piece) {
-        long board = 0;
-        if (piece == 1) {
-            for (int i = 0; i < 7; i++) board += (state >>> (6 * i) & 0b111111) << (7 * i);
+    static int countThreats(long state, int piece) {
+        int threatCount = 0;
+        long board = adjustBoard(state, piece);
+        for (int col = 0; col < 7; col++) {
+            int row = (int) (state >>> 42 + col * 3 & 0b111);
+            for (; row < 6; row++) {
+                if (connected4(board + (1L << col * 7 + row))) threatCount += 1 + ((row & 1) ^ piece);
+            }
         }
-        else {
-            for (int i = 0; i < 7; i++) board += ((state >>> (6 * i) & 0b111111) ^ ((1 << (state >> (42 + i * 3) & 0b111)) - 1)) << (7 * i);
-        }
-        // check horizontal win
-        long horizontal = board & (board >>> 7);
-        if ((horizontal & (horizontal >>> 14)) != 0) return true;
-        // check vertical win
-        long vertical = board & (board >>> 1);
-        if ((vertical & (vertical >>> 2)) != 0) return true;
-        // check positive-sloped diagonal
-        long posDiag = board & (board >>> 6);
-        if ((posDiag & (posDiag >>> 12)) != 0) return true;
-        // check negative-sloped diagonal
-        long negDiag = board & (board >>> 8);
-        return (negDiag & (negDiag >>> 16)) != 0;
+        return threatCount;
     }
 
-    static HashMap<Long, Integer> states = new HashMap<>();
-    static byte[] moveOrder = {3, 2, 4, 5, 1, 6, 0};
+    static long adjustBoard(long state, int piece) {
+        long board = 0;
+        if (piece == 1)
+            for (int i = 0; i < 7; i++) board += (state >>> (6 * i) & 0b111111) << (7 * i);
+        else
+            for (int i = 0; i < 7; i++) board += ((state >>> (6 * i) & 0b111111) ^ ((1 << (state >> (42 + i * 3) & 0b111)) - 1)) << (7 * i);
+        return board;
+    }
 
-    static int SIZE = 100_000_007;
+    static boolean connected4(long board) {
+        for (int i = 1; i < 9; i += 1 / i * 4 + 1) {
+            long connections = board;
+            for (int j = 0; j < 3; j++) connections = connections & (connections >>> i);
+            if (connections != 0) return true;
+        }
+        return false;
+    }
+
+    static boolean isWin(long state, int piece) { return connected4(adjustBoard(state, piece)); }
+
+    static HashMap<Long, Integer> states = new HashMap<>();
+    static int[] moveOrder = {3, 2, 4, 5, 1, 6, 0};
+
+    static int SIZE = 0;
 
     static long[] cache = new long[SIZE];
     static int[] evals = new int[SIZE];
     static long[] upper = new long[SIZE];
     static long[] lower = new long[SIZE];
+    static long[][][] heuristic = new long[2][7][6];
+    static HashSet<Long> wins = new HashSet<>(), losses = new HashSet<>(), alphaVals = new HashSet<>(), betaVals = new HashSet<>();
+    static PrintWriter winsPW, lossesPW, alphaPW, betaPW;
 
     static int evaluatePosition(long state, int piece, int alpha, int beta, int movesMade){
         x++;
@@ -283,44 +317,82 @@ public class Main {
         if (cache[index] == state) return evals[index];
         if (lower[index] == state) alpha = 0;
         if (upper[index] == state) beta = 0;
-        for (int col : moveOrder) {
-            int height = (int) ((state >> 42 + col * 3) & 0b111);
-            if (height != 6) {
-                long move = nextState(state, piece, col, height);
-                // if(piece == 0 && checkWin(move, piece, col * 6 + height)) return 1;
-                if (isWin(move, piece)) return 1;
-//                if(checkWin(move, piece, col * 6 + height)) return 1;
-                int moveIndex = (int) (move % SIZE);
-                if (cache[moveIndex] == move) alpha = Math.max(alpha, -evals[moveIndex]);
-                if (upper[moveIndex] == move) alpha = Math.max(alpha, 0);
-                if (alpha >= beta) return alpha;
-            }
-        }
+        if (wins.contains(state)) return 1;
+        if (losses.contains(state)) return -1;
+        if (alphaVals.contains(state)) alpha = 0;
+        if (betaVals.contains(state)) beta = 0;
+        ArrayList<Integer> order = new ArrayList<>();
+        int[] scores = new int[7];
         int i = -1;
         for (int col : moveOrder) {
             int height = (int) ((state >> 42 + col * 3) & 0b111);
             if (height != 6) {
                 i++;
                 long move = nextState(state, piece, col, height);
+                if (isWin(move, piece)) return 1;
+                int moveIndex = (int) (move % SIZE);
+                if (cache[moveIndex] == move) alpha = Math.max(alpha, -evals[moveIndex]);
+                if (upper[moveIndex] == move) alpha = Math.max(alpha, 0);
+                if (alpha >= beta) {
+//                    if (movesMade < 16) {
+//                        if (alpha == 1) winsPW.println(state);
+//                        else alphaPW.println(state);
+//                    }
+                    return alpha;
+                }
+                order.add(col);
+                scores[col] = countThreats(move, piece);
+//                scores[col] = heuristic[piece][col][height];
+            }
+        }
+        i = -1;
+        order.sort((a, b) -> scores[b] - scores[a]);
+        ArrayList<int[]> failedMoves = new ArrayList<>();
+        for (int col : order) {
+            int height = (int) (state >>> 42 + col * 3 & 0b111);
+            if (height != 6) {
+                i++;
+                long move = nextState(state, piece, col, height);
                 int eval = -evaluatePosition(move, piece ^ 1, -beta, -alpha, movesMade + 1);
                 alpha = Math.max(alpha, eval);
                 if (alpha >= beta) {
-                    if(movesMade < 15) frequency[i]++;
+                    heuristic[piece][col][height] += failedMoves.size();
+                    for (int[] failedMove : failedMoves) heuristic[piece][failedMove[0]][failedMove[1]]--;
+                    if (movesMade < 16) frequency[i]++;
                     if (alpha == 1) {
+//                        if (movesMade < 16) winsPW.println(state);
                         cache[index] = state;
                         evals[index] = 1;
                     }
-                    else lower[index] = state;
+                    else {
+//                        if (movesMade < 16) alphaPW.println(state);
+                        lower[index] = state;
+                    }
                     return alpha;
                 }
+                failedMoves.add(new int[]{col, height});
             }
         }
         if (alpha == -1) {
+//            if (movesMade < 16) lossesPW.println(state);
             cache[index] = state;
             evals[index] = -1;
         }
-        else upper[index] = state;
+        else {
+//            if (movesMade < 16) betaPW.println(state);
+            upper[index] = state;
+        }
         return alpha;
+    }
+
+    static ArrayList<HashSet<Integer>> bestMoves = new ArrayList<>();
+
+    static int configIndex(long state) {
+        int index = 0;
+        for (int i = 0; i < 7; i++) {
+            index += (int) (Math.round(Math.pow(7, i)) * (state >>> 42 + i * 3 & 0b111));
+        }
+        return index;
     }
 
 //    static void updateCache(long state, boolean isUpper, int eval) {
