@@ -2,6 +2,7 @@ package connect4bot;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static connect4bot.Main.*;
 
@@ -13,8 +14,9 @@ public class Solver {
                         "       \n" +
                         "       \n" +
                         "       \n" +
-                        "       \n" +
-                        "1      \n";
+                        "   0   \n" +
+                        "1  1   \n";
+
         String p2 =     "0      \n" +
                         "1      \n" +
                         "0      \n" +
@@ -26,10 +28,14 @@ public class Solver {
         loadCaches();
         int movesMade = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
         try {
-            upperPW = new PrintWriter("r");
-            lowerPW = new PrintWriter("l.txt");
+            upperPW = new PrintWriter("upper1.txt");
+            lowerPW = new PrintWriter("lower1.txt");
             long start = System.currentTimeMillis();
+            System.gc();
+            long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
             int eval = evaluatePosition(state, (movesMade & 1) ^ 1, WORST_EVAL, BEST_EVAL, movesMade);
+            mergeCaches();
+            System.out.println(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
             System.out.println("Time: " + (System.currentTimeMillis() - start));
             System.out.println("Positions evaluated: " + positionsEvaluated);
             System.out.println("Eval: " + eval);
@@ -61,6 +67,8 @@ public class Solver {
         positionsEvaluated++;
         if (movesMade == 42) return 0;
         int index = (int) (state % SIZE);
+        beta = Math.min(beta, 21 - (movesMade >>> 1));
+        alpha = Math.max(alpha, (movesMade + 1 >>> 1) - 21);
         if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValue[index]);
         if (upperBoundCache[index] == state) {
             beta = Math.min(beta, upperBoundValue[index]);
@@ -75,10 +83,7 @@ public class Solver {
                 if (isWin(move, piece)) return 21 - (movesMade >>> 1);
                 int moveIndex = (int) (move % SIZE);
                 if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValue[moveIndex]);
-                if (alpha >= beta) {
-//                    if(movesMade < 16) lowerPW.println(state + " " + alpha);
-                    return alpha;
-                }
+                if (alpha >= beta) return alpha;
                 threats[col] = countThreats(move, piece);
             }
         }
@@ -96,14 +101,14 @@ public class Solver {
                 }
                 alpha = Math.max(alpha, eval);
                 if (alpha >= beta) {
-//                    if(movesMade < 16) lowerPW.println(state + " " + alpha);
+                    if(movesMade < 16) lowerPW.println(state + " " + alpha);
                     lowerBoundCache[index] = state;
                     lowerBoundValue[index] = alpha;
                     return alpha;
                 }
             }
         }
-//        if(movesMade < 16) upperPW.println(state + " " + alpha);
+        if(movesMade < 16) upperPW.println(state + " " + alpha);
         upperBoundCache[index] = state;
         upperBoundValue[index] = alpha;
         return alpha;
@@ -119,9 +124,40 @@ public class Solver {
         }
     }
 
+    static void mergeCaches() {
+        mergeCaches(true);
+        mergeCaches(false);
+    }
+
+    static void mergeCaches(boolean upper) {
+        String name = upper ? "upper" : "lower";
+        HashMap<Long, Integer> bounds = new HashMap<>();
+        try {
+            for (int i = 0; i < 2; i++) {
+                BufferedReader in = new BufferedReader(new FileReader(name + i + ".txt"));
+                String line = in.readLine();
+                while (line != null) {
+                    String[] tokens = line.split(" ");
+                    System.out.println(Arrays.toString(tokens));
+                    long state = Long.parseLong(tokens[0]);
+                    int bound = Integer.parseInt(tokens[1]);
+                    bounds.put(state, upper ? Math.min(bound, bounds.getOrDefault(state, BEST_EVAL)) :
+                            Math.max(bound, bounds.getOrDefault(state, WORST_EVAL)));
+                    line = in.readLine();
+                }
+            }
+            try (PrintWriter pw = new PrintWriter(name + "0.txt")) {
+                bounds.forEach((state, bound) -> pw.println(state + " " + bound));
+            }
+        }
+        catch (IOException e) { throw new RuntimeException(e); }
+    }
+
     static void loadCaches() {
-        updateCache(upperBoundCache, upperBoundValue, "upper.txt");
-        updateCache(lowerBoundCache, lowerBoundValue, "lower.txt");
+        for (int i = 1; i <= 1; i++) {
+            updateCache(upperBoundCache, upperBoundValue, "upper0.txt");
+            updateCache(lowerBoundCache, lowerBoundValue, "lower0.txt");
+        }
     }
 
     static void updateCache(long[] keys, int[] values, String filename) {
