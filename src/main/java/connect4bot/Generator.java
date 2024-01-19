@@ -22,7 +22,7 @@ public class Generator {
                         "       \n" +
                         "       \n" +
                         "   1   \n";
-        System.out.println(decode(468413945862946817L));
+        System.out.println(decode(2608041581351040L));
         System.gc();
         loadCaches();
         System.gc();
@@ -113,7 +113,7 @@ public class Generator {
                 }
                 else {
                     eval = -Solver.evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval, movesMade + 1);
-                    if (eval > maxEval) eval = -Solver.evaluatePosition(move, piece ^ 1, maxEval, BEST_EVAL, movesMade + 1);
+                    if (eval > maxEval) eval = -Solver.evaluatePosition(move, piece ^ 1, WORST_EVAL, -maxEval, movesMade + 1);
                     else continue;
                 }
             }
@@ -158,6 +158,7 @@ public class Generator {
     }
 
     static void updateDatabase() {
+        Solver.filterSymmetricalPositions();
         Solver.updateDatabase(upperBounds, "upper1.bin");
         Solver.updateDatabase(lowerBounds, "lower1.bin");
 //        Solver.updateDatabase(cache, "cache.bin");

@@ -283,21 +283,6 @@ public class Solver {
                 long state = 0;
                 for (int j = i; j < i + 8; j++) state += (long) (bytes[j] & 255) << (j - i << 3);
                 byte bound = bytes[i + 8];
-//                if (cache.containsKey(reflectState(state)) && bound != cache.get(reflectState(state))) {
-//                    byte b = cache.get(reflectState(state));
-//                    if (b > bound && cache == lowerBounds) {
-//                        cache.put(state, b);
-//                        cache.put(reflectState(state), b);
-//                    }
-//                    else if (b < bound && cache == upperBounds) {
-//                        cache.put(state, b);
-//                        cache.put(reflectState(state), b);
-//                    }
-//                    else cache.put(state, bound);
-//                }
-//                else {
-//                    cache.put(state, bound);
-//                }
                 cache.put(state, bound);
                 cache.put(reflectState(state), bound);
                 cacheState(reflectState(state), bound, keys, values);
@@ -336,11 +321,13 @@ public class Solver {
     }
 
     static HashMap<Long, Byte> filterSymmetricalPositions(HashMap<Long, Byte> cache, boolean flag) {
+        byte UNDEFINED = 100;
         HashMap<Long, Byte> updatedCache = new HashMap<>();
         for (long state : cache.keySet()) {
             long reflected = reflectState(state);
-            if (!updatedCache.containsKey(reflected) || (cache.get(state) > updatedCache.get(reflected) == flag)) {
-                updatedCache.put(state, cache.get(state));
+            byte bound = cache.get(state), reflectedBound = updatedCache.getOrDefault(reflected, UNDEFINED);
+            if (reflectedBound == UNDEFINED || (bound != reflectedBound && (bound > reflectedBound == flag))) {
+                updatedCache.put(state, bound);
             }
         }
         return updatedCache;
