@@ -22,39 +22,47 @@ public class Generator {
                         "       \n" +
                         "       \n" +
                         "   1   \n";
-//        compileCache();
-        int count = 0;
-//        HashSet<Long> states = new HashSet<>();
-//        for (long state : cache.keySet()) {
-//            if (depth(state) == 1) states.addAll(nextStates(state, 1));
-//        }
-//        System.out.println(states.size());
-
-//        System.exit(0);
+        System.out.println(decode(468413945862946817L));
+        System.gc();
         loadCaches();
+        System.gc();
+        System.out.println(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
         long state = encode(p1);
         int movesMade = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
         int piece = (movesMade & 1) ^ 1;
         long start = System.currentTimeMillis();
+//        System.out.println(bestMoves(state, piece, movesMade));
+//        System.out.println(decode(bestMoves(state, piece, movesMade).get(0)));
+//        System.out.println("Eval: " + Solver.evaluatePosition(state, piece, WORST_EVAL, BEST_EVAL, movesMade));
         generateLines(state, piece, movesMade, 3);
-        System.out.println(System.currentTimeMillis() - start);
-        System.out.println("Lines: " + optimalStates.size());
-        long maxTime = 0;
-        long totalTime = 0;
+        System.out.println("Time: " + (System.currentTimeMillis() - start));
+        System.out.println(optimalStates.size());
+        int count = 0;
         for (long pos : optimalStates) {
-            long s = System.currentTimeMillis();
-            bestMoves(pos, 0, 7);
-            long time = System.currentTimeMillis() - s;
-            System.out.println(time);
-            maxTime = Math.max(maxTime, time);
-            totalTime += time;
-            System.out.println(++count);
-            System.out.println(cache.size());
+            if (count == 0) System.out.println(decode(pos));
+            count++;
         }
-        System.out.println(count);
-        System.out.println(maxTime);
-        System.out.println(totalTime / 5);
-        updateDatabase();
+        System.out.println(positionsEvaluated);
+//        updateDatabase();
+//        long maxTime = 0;
+//        long totalTime = 0;
+//        for (long pos : optimalStates) {
+//            if (count == count) {
+//                System.out.println(decode(pos));
+//                long s = System.currentTimeMillis();
+//                bestMoves(pos, 0, 7);
+//                long time = System.currentTimeMillis() - s;
+//                System.out.println(time);
+//                maxTime = Math.max(maxTime, time);
+//                totalTime += time;
+//            }
+//            System.out.println(++count);
+//            System.out.println(cache.size());
+//            System.out.println();
+//        }
+//        System.out.println(count);
+//        System.out.println(maxTime);
+//        System.out.println(totalTime / 268);
     }
 
     static HashMap<Long, Byte> cache = new HashMap<>();
@@ -62,11 +70,17 @@ public class Generator {
     static int lines = 0;
 
     static void generateLines(long state, int piece, int movesMade, int depthRemaining) {
-        System.out.println(decode(state));
         if (depthRemaining == 0 || cache.containsKey(state) || cache.containsKey(reflectState(state))) return;
         int oppPiece = piece ^ 1;
+        long time = System.currentTimeMillis();
+        System.out.println(decode(state));
         ArrayList<Long> bestMoves = bestMoves(state, piece, movesMade);
+        time = System.currentTimeMillis() - time;
         if (depthRemaining == 1) {
+            System.out.println(lines++);
+            System.out.println(state);
+            System.out.println(time);
+            if (lines == 210) System.out.println(decode(state));
             for (long move : bestMoves) {
                 for (long nextState : nextStates(move, oppPiece)) {
                     if (!optimalStates.contains(nextState) && !optimalStates.contains(reflectState(nextState))) optimalStates.add(nextState);
@@ -90,11 +104,17 @@ public class Generator {
             int eval;
             if (cache.containsKey(move)) eval = -cache.get(move);
             else if (cache.containsKey(reflectState(move))) eval = -cache.get(reflectState(move));
+            else if (i == 0) eval = -Solver.evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
             else {
-                if (i++ == 0) eval = -Solver.evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
-                else {
+                if (maxEval < 0) {
                     eval = -Solver.evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval + 1, movesMade + 1);
                     if (eval > maxEval) eval = -Solver.evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
+                    else if (eval < maxEval) continue;
+                }
+                else {
+                    eval = -Solver.evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval, movesMade + 1);
+                    if (eval > maxEval) eval = -Solver.evaluatePosition(move, piece ^ 1, maxEval, BEST_EVAL, movesMade + 1);
+                    else continue;
                 }
             }
             if (eval > maxEval) {
@@ -104,6 +124,7 @@ public class Generator {
             }
             else if (eval == maxEval) bestMoves.add(move);
             cache.put(move, (byte) -eval);
+            i++;
         }
         cache.put(state, (byte) maxEval);
         return bestMoves;
@@ -132,13 +153,13 @@ public class Generator {
     }
 
     static void loadCaches() {
-        loadCache(upperBoundCache, upperBoundValues, upperBounds, "upper0.bin");
-        loadCache(lowerBoundCache, lowerBoundValues, lowerBounds, "lower0.bin");
+        loadCache(upperBoundCache, upperBoundValues, upperBounds, "upper1.bin");
+        loadCache(lowerBoundCache, lowerBoundValues, lowerBounds, "lower1.bin");
     }
 
     static void updateDatabase() {
-        Solver.updateDatabase(upperBounds, "upper0.bin");
-        Solver.updateDatabase(lowerBounds, "lower0.bin");
-        Solver.updateDatabase(cache, "cache.bin");
+        Solver.updateDatabase(upperBounds, "upper1.bin");
+        Solver.updateDatabase(lowerBounds, "lower1.bin");
+//        Solver.updateDatabase(cache, "cache.bin");
     }
 }

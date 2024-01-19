@@ -269,8 +269,7 @@ public class Main {
         int threatCount = 0;
         long board = adjustBoard(state, piece);
         for (int col = 0; col < 7; col++) {
-            int row = (int) (state >>> 42 + col * 3 & 0b111);
-            for (; row < 6; row++) {
+            for (int row = (int) (state >>> 42 + col * 3 & 0b111); row < 6; row++) {
                 if (connected4(board + (1L << col * 7 + row))) threatCount += 1 + ((row & 1) ^ piece);
             }
         }

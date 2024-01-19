@@ -30,12 +30,12 @@ public class MCT {
                         "1001101\n" +
                         "1010011\n" +
                         "1101101\n";
-        String board  = "   0   \n" +
-                        "   1   \n" +
+        String board  = "       \n" +
+                        "       \n" +
                         "   0   \n" +
                         "   1   \n" +
-                        "   0   \n" +
-                        "   1   \n";
+                        "1  0   \n" +
+                        "10 10  \n";
 //        System.out.println(decode(193654784032768000L));
 //        System.out.println(decode(14108933213138944L));
         long pos = encode(board);
@@ -43,7 +43,7 @@ public class MCT {
         int depth = 2 * board.length() - board.replace("1", "").length() - board.replace("0", "").length();
         long start = System.currentTimeMillis();
         MCT node = new MCT(pos, depth);
-        for (int i = 0; i < 1000; i++) selectionSimulation(node);
+        for (int i = 0; i < 5000000; i++) selectionSimulation(node);
         System.out.println(node.wins / node.simulations);
         System.out.println(Arrays.toString(MCT.moveOrder(pos, 6)));
         System.out.println(System.currentTimeMillis() - start);

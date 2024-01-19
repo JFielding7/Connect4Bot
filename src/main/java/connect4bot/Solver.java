@@ -14,35 +14,49 @@ public class Solver {
     static final int WORST_EVAL = -21;
     static final int BEST_EVAL = 21;
     static long positionsEvaluated = 0;
-    static final int SIZE = 55_000_027;
+    static final int SIZE = 30_000_001;
     static long[] lowerBoundCache = new long[SIZE], upperBoundCache = new long[SIZE];
     static int[] lowerBoundValues = new int[SIZE], upperBoundValues = new int[SIZE];
     static int collisions = 0;
+    static int wins = 0;
+    static int oddMoves = 0;
+    static int evenMoves = 0;
+    //    0
+    //  01
+    //  10
+    //0 11 1
+    //1 10 0
+    //0101100
 
     public static void main(String[] args) {
         Arrays.fill(lowerBoundCache, -1);
         Arrays.fill(upperBoundCache, -1);
-        String p1 =     "       \n" +
-                        "   1   \n" +
-                        "   0   \n" +
-                        "   1   \n" +
-                        "   0   \n" +
-                        "   10  \n";
+        String p1 =     "   0   \n" +
+                        "  01   \n" +
+                        "  10   \n" +
+                        "0 11 1 \n" +
+                        "1 10 0 \n" +
+                        "0101100\n";
 
-        String p2 =     "0      \n" +
-                        "1      \n" +
-                        "0      \n" +
-                        "1      \n" +
-                        "0      \n" +
-                        "1101010\n";
+        String p2 =     "   0   \n" +
+                        "   1   \n" +
+                        "   0   \n" +
+                        "   1   \n" +
+                        "   0   \n" +
+                        "   1   \n";
+        Arrays.fill(heuristicLowerBounds, -1);
+        Arrays.fill(heuristicUpperBounds, -1);
+//        System.out.println(heuristicEvaluation(encode(p1), 1, -42, 42, 20));
+//        System.exit(0);
         long state = encode(p1);
         System.out.println(state);
         System.out.println(depth(state));
-        loadCaches();
+//        loadCaches();
         int movesMade = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
         System.gc();
         long start = System.currentTimeMillis();
-        int eval = evaluatePosition(state, (movesMade & 1) ^ 1, WORST_EVAL, BEST_EVAL, movesMade);
+        int eval = evaluatePosition(state, (movesMade & 1) ^ 1, -1, 1, movesMade);
+        System.out.println(Arrays.toString(frequency));
         System.out.println(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
         System.out.println(collisions);
         System.out.println("Time: " + (System.currentTimeMillis() - start));
@@ -56,6 +70,9 @@ public class Solver {
             int movesToWin = 22 + eval - (movesMade + 1 >>> 1);
             System.out.println("Player " + (2 - (movesMade & 1)) + " wins in " + movesToWin + " moves");
         }
+        System.out.println(wins);
+        System.out.println(oddMoves);
+        System.out.println(evenMoves);
 //        updateDatabase();
     }
 
@@ -65,6 +82,8 @@ public class Solver {
         int index = (int) (state % SIZE);
         beta = Math.min(beta, 21 - (movesMade >>> 1));
         alpha = Math.max(alpha, (movesMade + 1 >>> 1) - 21);
+        if (movesMade < 16 && lowerBounds.containsKey(state)) alpha = Math.max(alpha, lowerBounds.get(state));
+        if (movesMade < 16 && upperBounds.containsKey(state)) beta = Math.min(beta, upperBounds.get(state));
         if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValues[index]);
         if (upperBoundCache[index] == state) {
             beta = Math.min(beta, upperBoundValues[index]);
@@ -72,17 +91,28 @@ public class Solver {
         }
         if (alpha >= beta) return alpha;
         int[] threats = new int[7], order = Arrays.copyOf(moveOrder, 7);
+        int forcedMoves = 0;
+        long forcedMove = -1;
         for (int col : moveOrder) {
             int height = (int) ((state >> 42 + col * 3) & 0b111);
             if (height != 6) {
                 long move = nextState(state, piece, col, height);
-                if (isWin(move, piece)) return 21 - (movesMade >>> 1);
+                if (isWin(nextState(state, piece ^ 1, col, height), piece ^ 1)) {
+                    forcedMoves++;
+                    forcedMove = move;
+                }
+                if (isWin(move, piece)) {
+                    wins++;
+                    return 21 - (movesMade >>> 1);
+                }
                 int moveIndex = (int) (move % SIZE);
                 if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValues[moveIndex]);
+                if (movesMade < 15 && upperBounds.containsKey(move)) alpha = Math.max(alpha, -upperBounds.get(move));
                 if (alpha >= beta) return alpha;
                 threats[col] = countThreats(move, piece);
             }
         }
+        if (forcedMoves > 0) return forcedMoves > 1 ? (movesMade + 1 >>> 1) - 21 : -evaluatePosition(forcedMove, piece ^ 1, -beta, -alpha, movesMade + 1);
         sortByThreats(order, threats);
         int i = 0;
         for (int col : order) {
@@ -97,6 +127,11 @@ public class Solver {
                 }
                 alpha = Math.max(alpha, eval);
                 if (alpha >= beta) {
+                    frequency[i - 1]++;
+                    if (piece == 0) {
+                        oddMoves += (height & 1) ^ 1;
+                        evenMoves += height & 1;
+                    }
                     if(movesMade < 16) lowerBounds.put(state, (byte) Math.max(alpha, lowerBounds.getOrDefault(state, (byte) WORST_EVAL)));
                     if (lowerBoundCache[index] != -1) collisions++;
                     lowerBoundCache[index] = state;
@@ -112,7 +147,7 @@ public class Solver {
         return alpha;
     }
 
-    private static void sortByThreats(int[] order, int[] threats) {
+    static void sortByThreats(int[] order, int[] threats) {
         for (int i = 1; i < 7; i++) {
             for (int j = i; j > 0 && threats[order[j]] > threats[order[j - 1]]; j--) {
                 int temp = order[j];
@@ -120,6 +155,87 @@ public class Solver {
                 order[j - 1] = temp;
             }
         }
+    }
+
+    static int heuristicCacheSize = 10000000;
+    static long[] heuristicUpperBounds = new long[heuristicCacheSize], heuristicLowerBounds = new long[heuristicCacheSize];
+    static int[] heuristicUpperValues = new int[heuristicCacheSize], heuristicLowerValues = new int[heuristicCacheSize];
+
+    static int heuristicEvaluation(long state, int piece, int alpha, int beta, int depthRemaining) {
+        if (depthRemaining == 0) return countThreats(state, piece) - countThreats(state, piece ^ 1);
+        int index = (int) (state % heuristicCacheSize);
+        if (heuristicLowerBounds[index] == state) alpha = Math.max(alpha, heuristicLowerValues[index]);
+        if (heuristicUpperBounds[index] == state) beta = Math.min(beta, heuristicUpperValues[index]);
+        if (alpha >= beta) return alpha;
+        for (int col : moveOrder) {
+            int height = (int) ((state >> 42 + col * 3) & 0b111);
+            if (height != 6) {
+                long move = nextState(state, piece, col, height);
+                if (isWin(move, piece)) return 42;
+                int moveIndex = (int) (move % heuristicCacheSize);
+                if (heuristicUpperBounds[moveIndex] == move) alpha = Math.max(alpha, -heuristicUpperValues[moveIndex]);
+                if (alpha >= beta) return alpha;
+            }
+        }
+        int i = 0;
+        for (int col : moveOrder) {
+            int height = (int) (state >>> 42 + col * 3 & 0b111);
+            if (height != 6) {
+                long move = nextState(state, piece, col, height);
+                int heuristic;
+                if (i++ == 0) heuristic = -heuristicEvaluation(move, piece ^ 1, -beta, -alpha, depthRemaining - 1);
+                else {
+                    heuristic = -heuristicEvaluation(move, piece ^ 1, -alpha - 1, -alpha, depthRemaining - 1);
+                    if (heuristic > alpha && heuristic < beta) heuristic = -heuristicEvaluation(move, piece ^ 1, -beta, -alpha, depthRemaining - 1);
+                }
+                if (depthRemaining == 21) System.out.println(col + " " + heuristic);
+                alpha = Math.max(alpha, heuristic);
+                if (alpha >= beta) {
+                    heuristicLowerBounds[index] = state;
+                    heuristicLowerValues[index] = alpha;
+                    return alpha;
+                }
+            }
+        }
+        heuristicUpperBounds[index] = state;
+        heuristicUpperValues[index] = alpha;
+        return alpha;
+    }
+
+    static int columnsControlled(long state, int piece) {
+        int controlled = 0, oppPiece = piece ^ 1;
+        long pieces = adjustBoard(state, piece), oppPieces = adjustBoard(state, oppPiece);
+        for (int col = 0; col < 7; col++) {
+            int threatBelow = -1;
+            for (int row = (int) (state >>> 42 + col * 3 & 0b111); row < 6; row++) {
+                long move = 1L << col * 7 + row;
+                boolean playerThreat = connected4(pieces + move), oppThreat = connected4(oppPieces + move);
+                if (playerThreat && threatBelow == piece) {
+                    controlled++;
+                    break;
+                }
+                if (oppThreat && threatBelow == oppPiece) {
+                    controlled--;
+                    break;
+                }
+                if (playerThreat) {
+                    if ((row & 1) == oppPiece) {
+                        controlled++;
+                        break;
+                    }
+                    threatBelow = piece;
+                }
+                if (oppThreat) {
+                    if ((row & 1) == piece) {
+                        controlled--;
+                        break;
+                    }
+                    threatBelow = oppPiece;
+                }
+                if (!playerThreat && !oppThreat) threatBelow = -1;
+            }
+        }
+        return controlled;
     }
 
     static long reflectState(long state) {
@@ -167,9 +283,25 @@ public class Solver {
                 long state = 0;
                 for (int j = i; j < i + 8; j++) state += (long) (bytes[j] & 255) << (j - i << 3);
                 byte bound = bytes[i + 8];
+//                if (cache.containsKey(reflectState(state)) && bound != cache.get(reflectState(state))) {
+//                    byte b = cache.get(reflectState(state));
+//                    if (b > bound && cache == lowerBounds) {
+//                        cache.put(state, b);
+//                        cache.put(reflectState(state), b);
+//                    }
+//                    else if (b < bound && cache == upperBounds) {
+//                        cache.put(state, b);
+//                        cache.put(reflectState(state), b);
+//                    }
+//                    else cache.put(state, bound);
+//                }
+//                else {
+//                    cache.put(state, bound);
+//                }
                 cache.put(state, bound);
-                cacheState(state, bound, keys, values);
+                cache.put(reflectState(state), bound);
                 cacheState(reflectState(state), bound, keys, values);
+                cacheState(state, bound, keys, values);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
