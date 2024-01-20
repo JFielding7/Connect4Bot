@@ -21,14 +21,14 @@ public class Data {
                         "       \n" +
                         "       \n" +
                         "       \n" +
-                        "    1  \n";
+                        "   1   \n";
         long state = encode(p1);
         System.out.println(state);
         int movesMade = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
         int piece = (movesMade & 1) ^ 1;
 //        System.out.println(evaluatePosition(state, piece, WORST_EVAL, BEST_EVAL, movesMade));
-        System.out.println(decode(bestMoves(state, piece, movesMade).get(0)));
-//        generateLines(state, piece, movesMade, 4);
+//        System.out.println(decode(bestMoves(state, piece, movesMade).get(0)));
+        generateLines(state, piece, movesMade, 4);
 //        System.out.println(evaluatePosition(state, piece, WORST_EVAL, BEST_EVAL, movesMade));
 //        Generator.updateDatabase();
         System.exit(0);

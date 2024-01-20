@@ -80,7 +80,6 @@ public class Generator {
             System.out.println(lines++);
             System.out.println(state);
             System.out.println(time);
-            if (lines == 210) System.out.println(decode(state));
             for (long move : bestMoves) {
                 for (long nextState : nextStates(move, oppPiece)) {
                     if (!optimalStates.contains(nextState) && !optimalStates.contains(reflectState(nextState))) optimalStates.add(nextState);
@@ -101,6 +100,12 @@ public class Generator {
         int maxEval = WORST_EVAL;
         int i = 0;
         for (long move : nextStates(state, piece)) {
+            if (isWin(move, piece)) {
+                bestMoves.clear();
+                bestMoves.add(move);
+                cache.put(state, (byte) (21 - (movesMade >>> 1)));
+                return bestMoves;
+            }
             int eval;
             if (cache.containsKey(move)) eval = -cache.get(move);
             else if (cache.containsKey(reflectState(move))) eval = -cache.get(reflectState(move));
