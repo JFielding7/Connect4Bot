@@ -158,14 +158,14 @@ public class Generator {
     }
 
     static void loadCaches() {
-        loadCache(upperBoundCache, upperBoundValues, upperBounds, "upper1.bin");
-        loadCache(lowerBoundCache, lowerBoundValues, lowerBounds, "lower1.bin");
+        loadCache(upperBoundCache, upperBoundValues, upperBounds, "upperBounds.bin");
+        loadCache(lowerBoundCache, lowerBoundValues, lowerBounds, "lowerBounds.bin");
     }
 
     static void updateDatabase() {
         Solver.filterSymmetricalPositions();
-        Solver.updateDatabase(upperBounds, "upper1.bin");
-        Solver.updateDatabase(lowerBounds, "lower1.bin");
+        Solver.updateDatabase(upperBounds, "upperBounds.bin");
+        Solver.updateDatabase(lowerBounds, "lowerBounds.bin");
 //        Solver.updateDatabase(cache, "cache.bin");
     }
 }

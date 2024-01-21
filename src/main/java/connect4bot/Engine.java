@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Random;
 
 public class Engine {
-
     static final int WORST_EVAL = -18;
     static final int BEST_EVAL = 18;
     static final int SIZE = 30_000_001;
@@ -17,18 +16,13 @@ public class Engine {
     static int[] lowerBoundValues = new int[SIZE], upperBoundValues = new int[SIZE];
     private static HashMap<Long, Byte> lowerBounds;
     private static HashMap<Long, Byte> upperBounds;
-    private static final int[] moveOrder = {3, 2, 4, 5, 1, 6, 0};
-    private static Random rng = new Random();
-
-    public static void main(String[] args) {
-        System.out.println(Main.decode(176484810408620032L));
-        System.out.println(makeOptimalMove(176484810408620032L, 0, 11));
-    }
+    private static final int[] MOVE_ORDER = {3, 2, 4, 5, 1, 6, 0};
+    private static final Random RNG = new Random();
 
     static int makeOptimalMove(long state, int piece, int movesMade) {
         ArrayList<Integer> bestMoves = new ArrayList<>();
         int maxEval = WORST_EVAL, i = 0;
-        for (int col : moveOrder) {
+        for (int col : MOVE_ORDER) {
             int height = (int) (state >>> 42 + col * 3 & 0b111);
             if (height == 6) continue;
             long move = nextState(state, piece, col, height);
@@ -55,7 +49,7 @@ public class Engine {
             else if (eval == maxEval) bestMoves.add(col);
             i++;
         }
-        return bestMoves.get(rng.nextInt(bestMoves.size()));
+        return bestMoves.get(RNG.nextInt(bestMoves.size()));
     }
 
     static int evaluatePosition(long state, int piece, int alpha, int beta, int movesMade) {
@@ -71,10 +65,10 @@ public class Engine {
             if (alpha >= beta) return beta;
         }
         if (alpha >= beta) return alpha;
-        int[] threats = new int[7], order = Arrays.copyOf(moveOrder, 7);
+        int[] threats = new int[7], order = Arrays.copyOf(MOVE_ORDER, 7);
         int forcedMoves = 0;
         long forcedMove = -1;
-        for (int col : moveOrder) {
+        for (int col : MOVE_ORDER) {
             int height = (int) ((state >> 42 + col * 3) & 0b111);
             if (height != 6) {
                 long move = nextState(state, piece, col, height);
@@ -162,7 +156,30 @@ public class Engine {
         return false;
     }
 
-    static boolean isWin(long state, int piece) { return connected4(adjustBoard(state, piece)); }
+    static boolean isWin(long state, int piece) {
+        return connected4(adjustBoard(state, piece));
+    }
+
+    static int depth(long state) {
+        int depth = 0;
+        for (int i = 42; i < 63; i+=3) {
+            depth += (int) (state >>> i & 0b111);
+        }
+        return depth;
+    }
+
+    static long reflectState(long state) {
+        long reflected = 0;
+        for (int col = 0; col < 7; col++) {
+            reflected += ((state >>> col * 6 & 0b111111) << (6 - col) * 6) + ((state >>> 42 + col * 3 & 0b111) << 42 + (6 - col) * 3);
+        }
+        return reflected;
+    }
+
+    public static void loadCaches() {
+        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lowerBounds.bin");
+        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upperBounds.bin");
+    }
 
     static HashMap<Long, Byte> loadCache(long[] keys, int[] values, String filename) {
         HashMap<Long, Byte> cache = new HashMap<>();
@@ -190,26 +207,5 @@ public class Engine {
             keys[index] = state;
             values[index] = bound;
         }
-    }
-
-    static int depth(long state) {
-        int depth = 0;
-        for (int i = 42; i < 63; i+=3) {
-            depth += (int) (state >>> i & 0b111);
-        }
-        return depth;
-    }
-
-    static long reflectState(long state) {
-        long reflected = 0;
-        for (int col = 0; col < 7; col++) {
-            reflected += ((state >>> col * 6 & 0b111111) << (6 - col) * 6) + ((state >>> 42 + col * 3 & 0b111) << 42 + (6 - col) * 3);
-        }
-        return reflected;
-    }
-
-    public static void loadCaches() {
-        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lower1.bin");
-        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upper1.bin");
     }
 }

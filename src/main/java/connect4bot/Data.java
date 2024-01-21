@@ -21,7 +21,7 @@ public class Data {
                         "       \n" +
                         "       \n" +
                         "       \n" +
-                        "   1   \n";
+                        "       \n";
         long state = encode(p1);
         System.out.println(state);
         int movesMade = 2 * p1.length() - p1.replace("1", "").length() - p1.replace("0", "").length();
