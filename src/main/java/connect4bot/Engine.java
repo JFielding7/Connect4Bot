@@ -177,8 +177,8 @@ public class Engine {
     }
 
     public static void loadCaches() {
-        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lowerBounds.bin");
-        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upperBounds.bin");
+        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "src\\main\\resources\\connect4bot\\lowerBounds.bin");
+        upperBounds = loadCache(upperBoundCache, upperBoundValues, "src\\main\\resources\\connect4bot\\upperBounds.bin");
     }
 
     static HashMap<Long, Byte> loadCache(long[] keys, int[] values, String filename) {
