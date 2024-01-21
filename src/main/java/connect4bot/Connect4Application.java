@@ -15,9 +15,10 @@ public class Connect4Application extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        Engine.loadCaches();
         mainStage = stage;
+        mainStage.setTitle("Connect Four");
         loadScene("title.fxml");
-        stage.setTitle("Connect Four");
     }
 
     public static void loadScene(String name) throws IOException {

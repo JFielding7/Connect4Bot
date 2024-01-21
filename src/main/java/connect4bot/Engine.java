@@ -15,8 +15,8 @@ public class Engine {
     static final int SIZE = 30_000_001;
     static long[] lowerBoundCache = new long[SIZE], upperBoundCache = new long[SIZE];
     static int[] lowerBoundValues = new int[SIZE], upperBoundValues = new int[SIZE];
-    private static final HashMap<Long, Byte> lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lower1.bin");
-    private static final HashMap<Long, Byte> upperBounds = loadCache(upperBoundCache, upperBoundValues, "upper1.bin");
+    private static HashMap<Long, Byte> lowerBounds;
+    private static HashMap<Long, Byte> upperBounds;
     private static final int[] moveOrder = {3, 2, 4, 5, 1, 6, 0};
     private static Random rng = new Random();
 
@@ -169,7 +169,6 @@ public class Engine {
         Arrays.fill(keys, -1);
         try {
             byte[] bytes = Files.readAllBytes(Path.of(filename));
-            System.out.println(bytes.length / 9);
             for (int i = 0; i < bytes.length; i += 9) {
                 long state = 0;
                 for (int j = i; j < i + 8; j++) state += (long) (bytes[j] & 255) << (j - i << 3);
@@ -207,5 +206,10 @@ public class Engine {
             reflected += ((state >>> col * 6 & 0b111111) << (6 - col) * 6) + ((state >>> 42 + col * 3 & 0b111) << 42 + (6 - col) * 3);
         }
         return reflected;
+    }
+
+    public static void loadCaches() {
+        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lower1.bin");
+        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upper1.bin");
     }
 }

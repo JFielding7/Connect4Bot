@@ -16,29 +16,31 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.util.Duration;
 
+import java.io.IOException;
 import java.net.URL;
-import java.util.Random;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class Connect4Controller implements Initializable {
-
-    private static final int R = 6, C = 7;
-    private static final int BOARD_WIDTH = 462, BOARD_HEIGHT = 336, BOARD_X = 70, BOARD_Y = 35;
+    private static final int ROWS = 6, COLUMNS = 7;
+    private static final int BOARD_WIDTH = 462, BOARD_HEIGHT = 336, BOARD_X = 144, BOARD_Y = 70;
     private static final int CELL_WIDTH = BOARD_WIDTH / 7, CELL_HEIGHT = BOARD_HEIGHT / 6;
     private static final int PIECE_RADIUS = 25;
-    private static final int DROP_START_Y = 7;
-
+    private static final int DROP_START_Y = 42;
+    private static final double FADED_OPACITY = .375;
+    private final HashMap<Integer, Circle> spotsFilled = new HashMap<>();
     private Game game;
-
     @FXML
-    private AnchorPane bg;
+    private Circle moveMarker;
+    @FXML
+    private AnchorPane backGround;
     @FXML
     private GridPane grid;
     @FXML
     private HBox startOptions;
     @FXML
+    private HBox endOptions;
+    @FXML
     private Label message;
-
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -46,82 +48,103 @@ public class Connect4Controller implements Initializable {
     }
 
     public void initializeBoard() {
-        for(int c = 0; c < C; c++) {
-            Pane colPane = new Pane();
-            Shape column = new Rectangle(CELL_WIDTH + 1, BOARD_HEIGHT);
-            for(int r = 0; r < R; r++) {
-                column = Shape.subtract(column, piece("white", CELL_WIDTH / 2d, CELL_HEIGHT / 2d + CELL_HEIGHT * r));
+        Shape board = new Rectangle(BOARD_X, BOARD_Y, BOARD_WIDTH, BOARD_HEIGHT);
+        for(int c = 0; c < COLUMNS; c++) {
+            for(int r = 0; r < ROWS; r++) {
+                board = Shape.subtract(board, getPiece("white", BOARD_X + CELL_WIDTH * (c + 0.5), BOARD_Y + CELL_HEIGHT * (r + 0.5)));
             }
-            column.setFill(Color.BLUE);
-            enableMouseEvents(colPane, column, c);
-            colPane.getChildren().add(column);
+            Pane colPane = new Pane();
+            enableMouseEvents(colPane, c);
             grid.add(colPane, c, 0);
         }
+        board.setFill(Color.BLUE);
+        board.setMouseTransparent(true);
+        backGround.getChildren().add(board);
     }
 
-    private void enableMouseEvents(Pane colPane, Shape column, int colIndex) {
-        colPane.setOnMouseEntered(e0 -> runOnValidPLayerTurn(colIndex, e0, e1 -> column.setFill(Color.LIGHTBLUE)));
-        colPane.setOnMouseExited(e -> column.setFill(Color.BLUE));
-        colPane.setOnMouseClicked(e0 -> runOnValidPLayerTurn(colIndex, e0, e1 -> {
+    private void enableMouseEvents(Pane colPane, int colIndex) {
+        colPane.setOnMouseEntered(e0 -> runOnValidPLayerMove(colIndex, e0, e1 -> {
+            moveMarker.setCenterX(BOARD_X + CELL_WIDTH * (0.5 + colIndex));
+            moveMarker.setCenterY(BOARD_Y + BOARD_HEIGHT - CELL_HEIGHT * (0.5 + game.getHeight(colIndex)));
+            moveMarker.setVisible(true);
+        }));
+        colPane.setOnMouseExited(e -> moveMarker.setVisible(false));
+        colPane.setOnMouseClicked(e0 -> runOnValidPLayerMove(colIndex, e0, e1 -> {
+            message.setText("");
             game.makePlayerTurn(colIndex);
-            column.setFill(Color.BLUE);
+            moveMarker.setVisible(false);
             TranslateTransition drop = dropPiece(colIndex);
-            drop.setOnFinished(e -> {if (!checkWin(false)) makeComputerMove();});
+            drop.setOnFinished(e -> {
+                if (gameNotOver(true)) makeComputerMove();
+            });
             drop.play();
         }));
     }
 
-    private void runOnValidPLayerTurn(int col, MouseEvent event, EventHandler<MouseEvent> handler) {
-        if (game != null && game.playerTurn == game.turn && game.getHeight(col) != 6) {
-            handler.handle(event);
-        }
+    private void runOnValidPLayerMove(int col, MouseEvent event, EventHandler<MouseEvent> handler) {
+        if (game != null && game.isPlayerTurn && game.getHeight(col) != 6) handler.handle(event);
     }
 
     private void makeComputerMove() {
-        dropPiece(game.makeComputerMove()).play();
-        if (game.checkWin()) {
-            message.setText("Computer Wins!");
-            message.setVisible(true);
-        }
+        TranslateTransition pieceDrop = dropPiece(game.makeComputerMove());
+        pieceDrop.setOnFinished(e -> {
+            if (gameNotOver(false)) {
+                game.isPlayerTurn = true;
+                message.setText("Your Turn");
+                grid.getChildren().forEach(col -> {
+                    if (col.isHover()) col.getOnMouseEntered().handle(null);
+                });
+            }
+        });
+        pieceDrop.play();
     }
 
-    private boolean checkWin(boolean com) {
-        if (game.checkWin()) {
-            if (com) System.out.println("Computer Wins");
-            else System.out.println("You Win");
-            return true;
+    private boolean gameNotOver(boolean isPlayerTurn) {
+        int result = game.checkGameOver();
+        if (result == Game.NOT_OVER) return true;
+        else if (result == Game.WIN) {
+            message.setText(isPlayerTurn ? "You Win!" : "Computer Wins!");
+            highlightWin();
         }
+        else message.setText("Draw!");
+        startOptions.setVisible(false);
+        message.setVisible(true);
         return false;
     }
 
     public TranslateTransition dropPiece(int col) {
         double dur = 1;
         int height = game.getHeight(col) - 1;
-        Circle c = piece((game.depth & 1) == 1 ? "red" : "yellow", BOARD_X + CELL_WIDTH / 2d + CELL_WIDTH * col, DROP_START_Y);
-        bg.getChildren().add(c);
-        c.toBack();
-        TranslateTransition tr = new TranslateTransition(Duration.seconds(dur), c);
+        Circle piece = getPiece((game.movesMde & 1) == 1 ? "red" : "yellow", BOARD_X + CELL_WIDTH / 2d + CELL_WIDTH * col, DROP_START_Y);
+        spotsFilled.put(col * 7 + height, piece);
+        backGround.getChildren().add(piece);
+        piece.toBack();
+        TranslateTransition tr = new TranslateTransition(Duration.seconds(dur), piece);
         tr.setByY(BOARD_HEIGHT - CELL_HEIGHT * height);
         return tr;
     }
 
-    public Circle piece(String color, double x, double y) {
-        Circle c = new Circle();
-        c.setRadius(PIECE_RADIUS);
-        c.setCenterX(x);
-        c.setCenterY(y);
-        c.setFill(Color.valueOf(color));
-        return c;
+    public Circle getPiece(String color, double x, double y) {
+        Circle piece = new Circle();
+        piece.setRadius(PIECE_RADIUS);
+        piece.setCenterX(x);
+        piece.setCenterY(y);
+        piece.setFill(Color.valueOf(color));
+        return piece;
     }
 
     public void setPlayerStarting() {
-        game = new Game(1);
-        startOptions.setVisible(false);
+        game = new Game(true);
+        setOptions();
+        message.setText("Your Turn");
+        moveMarker.setFill(Color.RED);
     }
 
     public void setComputerStarting() {
-        game = new Game(0);
-        startOptions.setVisible(false);
+        game = new Game(false);
+        setOptions();
+        message.setText("");
+        moveMarker.setFill(Color.YELLOW);
         makeComputerMove();
     }
 
@@ -129,5 +152,25 @@ public class Connect4Controller implements Initializable {
         int choice = new Random().nextInt(2);
         if (choice == 1) setPlayerStarting();
         else setComputerStarting();
+    }
+
+    private void setOptions() {
+        startOptions.setVisible(false);
+        endOptions.setVisible(true);
+    }
+
+    public void highlightWin() {
+        HashSet<Integer> winningSpots = game.getWinningSpots();
+        for (int spot : spotsFilled.keySet()) {
+            if (!winningSpots.contains(spot)) spotsFilled.get(spot).setOpacity(FADED_OPACITY);
+        }
+    }
+
+    public void playAgain() throws IOException {
+        Connect4Application.loadScene("connect4.fxml");
+    }
+
+    public void quit() throws IOException {
+        Connect4Application.loadScene("title.fxml");
     }
 }

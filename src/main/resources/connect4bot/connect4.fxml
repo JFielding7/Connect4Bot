@@ -6,42 +6,58 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="bg" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.Connect4Controller">
-    <children>
-      <GridPane fx:id="grid" layoutX="70.0" layoutY="35.0" prefHeight="336.0" prefWidth="462.0">
-        <columnConstraints>
+<AnchorPane fx:id="backGround" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.Connect4Controller">
+    <Circle fx:id="moveMarker" fill="DODGERBLUE" mouseTransparent="true" opacity="0.375" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" visible="false" />
+    <GridPane fx:id="grid" layoutX="144.0" layoutY="70.0" prefHeight="336.0" prefWidth="462.0">
+      <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+      </columnConstraints>
+      <rowConstraints>
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Pane prefHeight="200.0" prefWidth="200.0" />
-            <Pane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" />
-            <Pane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="2" />
-         </children>
-      </GridPane>
-      <HBox fx:id="startOptions" alignment="CENTER" layoutX="100.0" layoutY="360.0" prefHeight="100.0" prefWidth="400.0" spacing="50.0">
-         <children>
-            <Button mnemonicParsing="false" onMouseClicked="#setPlayerStarting" prefHeight="50.0" prefWidth="100.0" text="Go First" />
-            <Button mnemonicParsing="false" onMouseClicked="#setComputerStarting" prefHeight="50.0" prefWidth="100.0" text="Go Second" />
-            <Button mnemonicParsing="false" onMouseClicked="#setRandomStart" prefHeight="50.0" prefWidth="100.0" text="Random" />
-         </children>
-      </HBox>
-      <Label fx:id="message" alignment="CENTER" layoutX="100.0" layoutY="360.0" prefHeight="100.0" prefWidth="400.0" text="Computer Wins!" visible="false">
-         <font>
-            <Font size="40.0" />
-         </font>
-      </Label>
-    </children>
+      </rowConstraints>
+    </GridPane>
+    <HBox fx:id="startOptions" alignment="TOP_CENTER" layoutY="500.0" prefHeight="100.0" prefWidth="750.0" spacing="25.0">
+        <Button mnemonicParsing="false" onMouseClicked="#setPlayerStarting" prefHeight="50.0" prefWidth="200.0" text="Go First (with Red)">
+            <font>
+                <Font size="15.0" />
+            </font>
+        </Button>
+        <Button mnemonicParsing="false" onMouseClicked="#setComputerStarting" prefHeight="50.0" prefWidth="200.0" text="Go Second (with Yellow)">
+            <font>
+                <Font size="15.0" />
+            </font>
+        </Button>
+        <Button mnemonicParsing="false" onMouseClicked="#setRandomStart" prefHeight="50.0" prefWidth="200.0" text="Random">
+            <font>
+                <Font size="15.0" />
+            </font>
+        </Button>
+    </HBox>
+    <Label fx:id="message" alignment="CENTER" layoutX="175.0" layoutY="400.0" prefHeight="100.0" prefWidth="400.0" text="Select Option:">
+        <font>
+          <Font size="40.0" />
+        </font>
+    </Label>
+    <HBox fx:id="endOptions" alignment="TOP_CENTER" layoutX="175.0" layoutY="500.0" prefHeight="100.0" prefWidth="400.0" spacing="25.0" visible="false">
+        <Button mnemonicParsing="false" onMouseClicked="#playAgain" prefHeight="50.0" prefWidth="200.0" text="Restart">
+            <font>
+                <Font size="15.0" />
+            </font>
+        </Button>
+        <Button mnemonicParsing="false" onMouseClicked="#quit" prefHeight="50.0" prefWidth="200.0" text="Quit">
+            <font>
+                <Font size="15.0" />
+            </font>
+        </Button>
+    </HBox>
 </AnchorPane>
