@@ -5,10 +5,12 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class Connect4Application extends Application {
     private static Stage mainStage;
@@ -17,7 +19,8 @@ public class Connect4Application extends Application {
     public void start(Stage stage) throws IOException {
         Engine.loadCaches();
         mainStage = stage;
-        mainStage.setTitle("Connect Four");
+        mainStage.setTitle("Connect Four AI");
+        mainStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("Board.png"))));
         loadScene("title.fxml");
     }
 
