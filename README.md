@@ -1,7 +1,7 @@
 # Connect 4 AI
 - AI that always plays the best move
 - When in a winning position, it plays the move that results in the quickest, assuming optimal play
-- When in a losing position, it plays the move that prolongs tha game as long as possible
+- When in a losing position, it plays the move that prolongs the game as long as possible
 
 ## How It Works
 
