@@ -3,7 +3,7 @@ package connect4bot;
 import java.io.*;
 import java.util.*;
 
-public class Main {
+public class Main1 {
 
     static int[][] CONNECTION_SHIFTS = {
             {63, 111, 153}, {71, 111, 113, 161}, {79, 111, 113, 115, 169}, {87, 111, 113, 115, 183}, {95, 113, 115, 191}, {103, 115, 199},

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static connect4bot.Main.*;
+import static connect4bot.Main1.*;
 
 public class Solver {
 

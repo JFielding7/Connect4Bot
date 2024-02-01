@@ -2,13 +2,10 @@ package connect4bot;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import static connect4bot.Generator.*;
-import static connect4bot.Main.bestMoves;
-import static connect4bot.Main.decode;
-import static connect4bot.Main.encode;
+import static connect4bot.Main1.encode;
 import static connect4bot.Solver.*;
 
 public class Data {

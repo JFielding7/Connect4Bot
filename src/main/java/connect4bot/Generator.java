@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static connect4bot.Main.*;
+import static connect4bot.Main1.*;
 import static connect4bot.Solver.*;
 
 public class Generator {

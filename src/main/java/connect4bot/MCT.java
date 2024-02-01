@@ -2,8 +2,7 @@ package connect4bot;
 
 import java.util.*;
 
-import static connect4bot.Main.decode;
-import static connect4bot.Main.encode;
+import static connect4bot.Main1.encode;
 
 public class MCT {
     private static final double EXPLORATION_CONSTANT = 2;
@@ -103,7 +102,7 @@ public class MCT {
         simulationsRan++;
         node.simulations++;
         int oppPiece = node.piece ^ 1;
-        if (Main.isWin(node.state, oppPiece)) {
+        if (Main1.isWin(node.state, oppPiece)) {
             node.wins += oppPiece;
             return oppPiece;
         }
@@ -143,7 +142,7 @@ public class MCT {
         int piece = node.piece ^ 1, depth = node.depth;
         Random rand = new Random();
         while (depth++ < 42) {
-            if (Main.isWin(state, piece)) {
+            if (Main1.isWin(state, piece)) {
                 node.wins += piece;
                 return piece;
             }
@@ -151,7 +150,7 @@ public class MCT {
             ArrayList<Long> moves = nextStates(state, piece);
             state = moves.get(rand.nextInt(moves.size()));
         }
-        if (Main.isWin(state, 0)) return 0;
+        if (Main1.isWin(state, 0)) return 0;
         node.wins += 0.5;
         return 0.5;
     }
@@ -181,7 +180,7 @@ public class MCT {
 
     static ArrayList<Long> nextStates(long state, int piece) {
         ArrayList<Long> moves = new ArrayList<>();
-        for (int i : Main.moveOrder) {
+        for (int i : Main1.moveOrder) {
             int height = (int) (state >>> 42 + i * 3 & 0b111);
             long move = nextState(state, piece, i, height);
             if (height < 6) moves.add(move);
