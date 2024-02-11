@@ -1,12 +1,12 @@
 package connect4bot;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.*;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.*;
 
 /**
  * Engine class responsible for calculating the AI's moves
@@ -277,8 +277,8 @@ public class Engine {
      * Loads the beginning game database
      */
     public static void loadDatabase() {
-        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "C:\\Users\\josep\\IdeaProjects\\Connect4Bot\\src\\main\\java\\connect4bot\\lowerBounds.bin");
-        upperBounds = loadCache(upperBoundCache, upperBoundValues, "C:\\Users\\josep\\IdeaProjects\\Connect4Bot\\src\\main\\java\\connect4bot\\upperBounds.bin");
+        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lowerBounds.bin");
+        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upperBounds.bin");
     }
 
     /**
@@ -292,7 +292,7 @@ public class Engine {
         HashMap<Long, Byte> cache = new HashMap<>();
         Arrays.fill(positions, -1);
         try {
-            byte[] bytes = Files.readAllBytes(Path.of(filename));
+            byte[] bytes = Objects.requireNonNull(Engine.class.getResourceAsStream(filename)).readAllBytes();
             for (int i = 0; i < bytes.length; i += 9) {
                 long state = 0;
                 for (int j = i; j < i + 8; j++) state += (long) (bytes[j] & 255) << (j - i << 3);
