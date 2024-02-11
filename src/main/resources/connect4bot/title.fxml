@@ -7,7 +7,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="backGround" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.TitleController">
+<AnchorPane fx:id="backGround" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.TitleController">
    <Label alignment="CENTER" prefHeight="100.0" prefWidth="750.0" text="Connect 4 AI">
       <font>
          <Font size="50.0" />

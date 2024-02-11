@@ -9,11 +9,21 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+/**
+ * Responsible for controlling the title screen
+ */
 public class TitleController implements Initializable {
-
+    /**
+     * The background of the title screen
+     */
     @FXML
     private AnchorPane backGround;
 
+    /**
+     * Sets up the title screen
+     * @param url N/A
+     * @param resourceBundle N/A
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         final int OFFSET_X = 177, OFFSET_Y = 408, CELL_WIDTH = 66, CELL_HEIGHT = 56, ROWS = 6, COLS = 7;
@@ -28,6 +38,9 @@ public class TitleController implements Initializable {
         }
     }
 
+    /**
+     * Starts the Connect 4 game when the start button is clicked
+     */
     public void startGame() throws IOException {
         Connect4Application.loadScene("connect4.fxml");
     }

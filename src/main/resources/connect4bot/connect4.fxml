@@ -10,7 +10,7 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="backGround" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.Connect4Controller">
+<AnchorPane fx:id="backGround" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="connect4bot.Connect4Controller">
     <Circle fx:id="moveMarker" fill="DODGERBLUE" mouseTransparent="true" opacity="0.375" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" visible="false" />
     <GridPane fx:id="grid" layoutX="144.0" layoutY="70.0" prefHeight="336.0" prefWidth="462.0">
       <columnConstraints>
