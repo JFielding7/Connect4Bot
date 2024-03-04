@@ -11,7 +11,8 @@ import java.util.*;
 /**
  * Engine class responsible for calculating the AI's moves
  */
-public class Engine {
+public class Solver {
+    static final int DATABASE_DEPTH = 15;
     /**
      * The worst minimax value possible
      */
@@ -31,64 +32,13 @@ public class Engine {
     /**
      * Caches containing the upper and lower bounds of their respective positions
      */
-    static int[] lowerBoundValues = new int[SIZE], upperBoundValues = new int[SIZE];
-    /**
-     * Cache containing the lower bounds of positions stored in the database
-     */
-    private static HashMap<Long, Byte> lowerBounds;
-    /**
-     * Cache containing the upper bounds of positions stored in the database
-     */
-    private static HashMap<Long, Byte> upperBounds;
+    static byte[] lowerBoundValues = new byte[SIZE], upperBoundValues = new byte[SIZE];
+    static byte[] upperBoundDatabase = new byte[Generator.posCount[DATABASE_DEPTH]];
+    static byte[] lowerBoundDatabase = new byte[Generator.posCount[DATABASE_DEPTH]];
     /**
      * The default order to search moves in
      */
     private static final int MOVE_ORDER = 3 + (2 << 4) + (4 << 8) + (5 << 12) + (1 << 16) + (6 << 20);
-    /**
-     * Random number generator
-     */
-    private static final Random RNG = new Random();
-
-    /**
-     * Finds the optimal move to play
-     * @param state Current Position
-     * @param piece Denotes what piece the computer is playing with (1 if it is going first, 0 if second)
-     * @param movesMade The number of moves made in the game so far
-     * @return The optimal column to play in
-     */
-    static int makeOptimalMove(long state, int piece, int movesMade) {
-        ArrayList<Integer> bestMoves = new ArrayList<>();
-        int maxEval = WORST_EVAL, i = 0;
-        for (int j = 0; j < 7; j++) {
-            int col = MOVE_ORDER >> j * 4 & 0b1111;
-            int height = (int) (state >>> 42 + col * 3 & 0b111);
-            if (height == 6) continue;
-            long move = nextState(state, piece, col, height);
-            if (isWin(move, piece)) return col;
-            int eval;
-            if (i == 0) eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
-            else {
-                if (maxEval < 0) {
-                    eval = -evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval + 1, movesMade + 1);
-                    if (eval > maxEval) eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
-                    else if (eval < maxEval) continue;
-                }
-                else {
-                    eval = -evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval, movesMade + 1);
-                    if (eval > maxEval) eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, -maxEval, movesMade + 1);
-                    else continue;
-                }
-            }
-            if (eval > maxEval) {
-                bestMoves.clear();
-                bestMoves.add(col);
-                maxEval = eval;
-            }
-            else if (eval == maxEval) bestMoves.add(col);
-            i++;
-        }
-        return bestMoves.get(RNG.nextInt(bestMoves.size()));
-    }
 
     /**
      * Finds the minimax value of a position, within the window [alpha, beta]
@@ -101,13 +51,19 @@ public class Engine {
      */
     static int evaluatePosition(long state, int piece, int alpha, int beta, int movesMade) {
         if (movesMade == 42) return 0;
-        int index = (int) (state % SIZE);
         beta = Math.min(beta, 21 - (movesMade >>> 1));
         alpha = Math.max(alpha, (movesMade + 1 >>> 1) - 21);
-        if (movesMade < 16 && lowerBounds.containsKey(state)) alpha = Math.max(alpha, lowerBounds.get(state));
-        if (movesMade < 16 && upperBounds.containsKey(state)) beta = Math.min(beta, upperBounds.get(state));
-        if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValues[index]);
-        if (upperBoundCache[index] == state) beta = Math.min(beta, upperBoundValues[index]);
+        int index;
+        if (movesMade > DATABASE_DEPTH) {
+            index = (int) (state % SIZE);
+            if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValues[index]);
+            if (upperBoundCache[index] == state) beta = Math.min(beta, upperBoundValues[index]);
+        }
+        else {
+            index = Generator.getIndex(state, movesMade);
+            alpha = Math.max(alpha, lowerBoundDatabase[index]);
+            beta = Math.min(beta, upperBoundDatabase[index]);
+        }
         if (alpha >= beta) return alpha;
         int threats = 0, order = MOVE_ORDER, forcedMoves = 0;
         long forcedMove = -1;
@@ -121,9 +77,11 @@ public class Engine {
                     forcedMove = move;
                 }
                 if (isWin(pieceLocations)) return 21 - (movesMade >>> 1);
-                int moveIndex = (int) (move % SIZE);
-                if (movesMade < 15 && upperBounds.containsKey(move)) alpha = Math.max(alpha, -upperBounds.get(move));
-                if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValues[moveIndex]);
+                if (movesMade < DATABASE_DEPTH) alpha = Math.max(alpha, -upperBoundDatabase[Generator.getIndex(move, movesMade + 1)]);
+                else {
+                    int moveIndex = (int) (move % SIZE);
+                    if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValues[moveIndex]);
+                }
                 if (alpha >= beta) return alpha;
                 threats += countThreats(move, pieceLocations, piece) << col * 4;
             }
@@ -144,14 +102,24 @@ public class Engine {
                 }
                 alpha = Math.max(alpha, eval);
                 if (alpha >= beta) {
-                    lowerBoundCache[index] = state;
-                    lowerBoundValues[index] = alpha;
+                    if (movesMade > DATABASE_DEPTH) {
+                        lowerBoundCache[index] = state;
+                        lowerBoundValues[index] = (byte) alpha;
+                    }
+                    else {
+                        lowerBoundDatabase[index] = (byte) alpha;
+                    }
                     return alpha;
                 }
             }
         }
-        upperBoundCache[index] = state;
-        upperBoundValues[index] = alpha;
+        if (movesMade > DATABASE_DEPTH) {
+            upperBoundCache[index] = state;
+            upperBoundValues[index] = (byte) alpha;
+        }
+        else {
+            upperBoundDatabase[index] = (byte) alpha;
+        }
         return alpha;
     }
 
@@ -245,86 +213,5 @@ public class Engine {
      */
     static boolean isWin(long state, int piece) {
         return isWin(getPieceLocations(state, piece));
-    }
-
-    /**
-     * Gets the number of moves played in the current state
-     * @param state The current state
-     * @return Number of moves played
-     */
-    static int depth(long state) {
-        int depth = 0;
-        for (int i = 42; i < 63; i+=3) {
-            depth += (int) (state >>> i & 0b111);
-        }
-        return depth;
-    }
-
-    /**
-     * Gets the state that is equivalent to the current state, except reflected horizontally
-     * @param state The current state
-     * @return The horizontally reflected state
-     */
-    static long reflectState(long state) {
-        long reflected = 0;
-        for (int col = 0; col < 7; col++) {
-            reflected += ((state >>> col * 6 & 0b111111) << (6 - col) * 6) + ((state >>> 42 + col * 3 & 0b111) << 42 + (6 - col) * 3);
-        }
-        return reflected;
-    }
-
-    /**
-     * Loads the beginning game database
-     */
-    public static void loadDatabase() {
-        lowerBounds = loadCache(lowerBoundCache, lowerBoundValues, "lowerBounds.bin");
-        HashSet<Long> states = new HashSet<>();
-        upperBounds = loadCache(upperBoundCache, upperBoundValues, "upperBounds.bin");
-        for (long state : upperBounds.keySet()) {
-            if (depth(state) < 9 && Objects.equals(lowerBounds.get(state), upperBounds.get(state))) states.add(state);
-        }
-        System.out.println(states.size());
-    }
-
-    /**
-     * Loads a cache containing either upper or lower bounds of the minimax values of positions
-     * @param positions Contains the positions to be cached
-     * @param bounds Contains the bounds of the respective positions
-     * @param filename The file containing the cache
-     * @return Cache of positions and their bounds stored in a map
-     */
-    static HashMap<Long, Byte> loadCache(long[] positions, int[] bounds, String filename) {
-        HashMap<Long, Byte> cache = new HashMap<>();
-        Arrays.fill(positions, -1);
-        try {
-            byte[] bytes = Objects.requireNonNull(Engine.class.getResourceAsStream(filename)).readAllBytes();
-            for (int i = 0; i < bytes.length; i += 9) {
-                long state = 0;
-                for (int j = i; j < i + 8; j++) state += (long) (bytes[j] & 255) << (j - i << 3);
-                byte bound = bytes[i + 8];
-                cache.put(state, bound);
-                cache.put(reflectState(state), bound);
-                cacheState(reflectState(state), bound, positions, bounds);
-                cacheState(state, bound, positions, bounds);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return cache;
-    }
-
-    /**
-     * Caches the current state along with its respective minimax bound
-     * @param state The current state
-     * @param bound The bound of the minimax value
-     * @param positions Stores all cached positions
-     * @param bounds Stores the respective bounds of cached positions
-     */
-    static void cacheState(long state, int bound, long[] positions, int[] bounds) {
-        int index = (int) (state % SIZE);
-        if (positions[index] == -1 || depth(state) <= depth(positions[index])) {
-            positions[index] = state;
-            bounds[index] = bound;
-        }
     }
 }
