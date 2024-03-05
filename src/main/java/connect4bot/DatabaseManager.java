@@ -21,6 +21,7 @@ public class DatabaseManager {
                 FileOutputStream out = new FileOutputStream(file + i + ".bin");
                 if (i < partitions - 1) out.write(bytes, i * sectionLength, sectionLength);
                 else out.write(bytes, i * sectionLength, sectionLength + bytes.length % partitions);
+                System.exit(0);
             }
         }
         catch (IOException e) {
