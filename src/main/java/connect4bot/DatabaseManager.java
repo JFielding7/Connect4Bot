@@ -8,8 +8,8 @@ import java.io.IOException;
 public class DatabaseManager {
 
     public static void main(String[] args) {
-        splitDatabase("upperBoundDatabase", 36);
-        splitDatabase("lowerBoundDatabase", 36);
+        splitDatabase("upperBoundDatabase", 4);
+        splitDatabase("lowerBoundDatabase", 4);
         // mergeDatabase("upperBoundDatabase", 4);
     }
 
@@ -21,7 +21,6 @@ public class DatabaseManager {
                 FileOutputStream out = new FileOutputStream(file + i + ".bin");
                 if (i < partitions - 1) out.write(bytes, i * sectionLength, sectionLength);
                 else out.write(bytes, i * sectionLength, sectionLength + bytes.length % partitions);
-                System.exit(0);
             }
         }
         catch (IOException e) {
