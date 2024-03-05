@@ -60,7 +60,7 @@ public class Engine {
         ArrayList<Integer> bestMoves = new ArrayList<>();
         int maxEval = WORST_EVAL, i = 0;
         for (int j = 0; j < 7; j++) {
-            int col = MOVE_ORDER >> j * 4 & 0b1111;
+            int col = MOVE_ORDER >>> j * 4 & 0b1111;
             int height = (int) (state >>> 42 + col * 3 & 0b111);
             if (height == 6) continue;
             long move = nextState(state, piece, col, height);
@@ -112,8 +112,8 @@ public class Engine {
         int threats = 0, order = MOVE_ORDER, forcedMoves = 0;
         long forcedMove = -1;
         for (int i = 0; i < 7; i++) {
-            int col = MOVE_ORDER >> i * 4 & 0b1111;
-            int height = (int) ((state >> 42 + col * 3) & 0b111);
+            int col = MOVE_ORDER >>> i * 4 & 0b1111;
+            int height = (int) ((state >>> 42 + col * 3) & 0b111);
             if (height != 6) {
                 long move = nextState(state, piece, col, height), pieceLocations = getPieceLocations(move, piece);
                 if (isWin(nextState(state, piece ^ 1, col, height), piece ^ 1)) {
@@ -217,7 +217,7 @@ public class Engine {
         }
         else {
             for (int i = 0; i < 7; i++) {
-                board += ((state >>> (6 * i) & 0b111111) ^ ((1 << (state >> (42 + i * 3) & 0b111)) - 1)) << (7 * i);
+                board += ((state >>> (6 * i) & 0b111111) ^ ((1 << (state >>> (42 + i * 3) & 0b111)) - 1)) << (7 * i);
             }
         }
         return board;

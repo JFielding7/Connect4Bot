@@ -1,6 +1,8 @@
 package connect4bot;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,8 +35,8 @@ public class Solver {
      * Caches containing the upper and lower bounds of their respective positions
      */
     static byte[] lowerBoundValues = new byte[SIZE], upperBoundValues = new byte[SIZE];
-    static byte[] upperBoundDatabase = new byte[Generator.posCount[DATABASE_DEPTH]];
-    static byte[] lowerBoundDatabase = new byte[Generator.posCount[DATABASE_DEPTH]];
+    static byte[] upperBoundDatabase = loadDatabase("upperBoundDatabase.bin");
+    static byte[] lowerBoundDatabase = loadDatabase("lowerBoundDatabase.bin");
     /**
      * The default order to search moves in
      */
@@ -108,6 +110,8 @@ public class Solver {
                     }
                     else {
                         lowerBoundDatabase[index] = (byte) alpha;
+                        int idx = Generator.getIndex(Engine.reflectState(state), movesMade);
+                        lowerBoundDatabase[idx] = (byte) Math.max(alpha, lowerBoundDatabase[idx]);
                     }
                     return alpha;
                 }
@@ -119,6 +123,8 @@ public class Solver {
         }
         else {
             upperBoundDatabase[index] = (byte) alpha;
+            int idx = Generator.getIndex(Engine.reflectState(state), movesMade);
+            upperBoundDatabase[idx] = (byte) Math.min(alpha, upperBoundDatabase[idx]);
         }
         return alpha;
     }
@@ -213,5 +219,14 @@ public class Solver {
      */
     static boolean isWin(long state, int piece) {
         return isWin(getPieceLocations(state, piece));
+    }
+
+    static byte[] loadDatabase(String file) {
+        try (FileInputStream in = new FileInputStream(file)) {
+            return in.readAllBytes();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
