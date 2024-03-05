@@ -8,8 +8,8 @@ import java.io.IOException;
 public class DatabaseManager {
 
     public static void main(String[] args) {
-//        splitDatabase("upperBoundDatabase", 4);
-//        splitDatabase("lowerBoundDatabase", 4);
+        splitDatabase("upperBoundDatabase", 36);
+        splitDatabase("lowerBoundDatabase", 36);
         // mergeDatabase("upperBoundDatabase", 4);
     }
 
