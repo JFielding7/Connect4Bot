@@ -35,8 +35,8 @@ public class Solver {
      * Caches containing the upper and lower bounds of their respective positions
      */
     static byte[] lowerBoundValues = new byte[SIZE], upperBoundValues = new byte[SIZE];
-    static byte[] upperBoundDatabase = loadDatabase("upperBoundDatabase.bin");
-    static byte[] lowerBoundDatabase = loadDatabase("lowerBoundDatabase.bin");
+    static byte[] upperBoundDatabase = loadDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase.bin");
+    static byte[] lowerBoundDatabase = loadDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase.bin");
     /**
      * The default order to search moves in
      */

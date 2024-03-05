@@ -24,9 +24,9 @@ public class Generator {
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
-        solvePositions(0, 1, 4, 0);
+        solvePositions(0, 1, 6, 0);
         System.out.println(states.size());
-//        updateDatabase();
+        // updateDatabase();
         System.out.println(System.currentTimeMillis() - start);
         System.exit(0);
         String board =  "     1 \n" +
@@ -94,8 +94,8 @@ public class Generator {
     }
 
     static void updateDatabase() {
-        updateDatabase(Solver.lowerBoundDatabase, "lowerBoundDatabase.bin");
-        updateDatabase(Solver.upperBoundDatabase, "upperBoundDatabase.bin");
+        updateDatabase(Solver.lowerBoundDatabase, "/home/jpfielding/Connect4Bot/lowerBoundDatabase.bin");
+        updateDatabase(Solver.upperBoundDatabase, "/home/jpfielding/Connect4Bot/upperBoundDatabase.bin");
     }
 
     static void updateDatabase(byte[] database, String file) {
@@ -108,6 +108,7 @@ public class Generator {
     }
 
     static HashSet<Long> states = new HashSet<>();
+    static int count = 0;
 
     static void solvePositions(long state, int piece, int depth, int movesMade) {
         if (depth == -1 || states.contains(state) || states.contains(Engine.reflectState(state))) return;
@@ -116,6 +117,7 @@ public class Generator {
         System.out.println(decode(state));
         int eval = Solver.evaluatePosition(state, piece, Solver.WORST_EVAL, Solver.BEST_EVAL, movesMade);
         System.out.println("Eval: " + eval);
+	System.out.println("Positions: " + ++count);
         int index = getIndex(state, movesMade);
         Solver.lowerBoundDatabase[index] = (byte) Math.max(eval, Solver.lowerBoundDatabase[index]);
         index = getIndex(Engine.reflectState(state), movesMade);
