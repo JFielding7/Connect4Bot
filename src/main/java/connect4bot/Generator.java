@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
+import static connect4bot.Engine.reflectState;
+import static connect4bot.Solver.*;
+
 public class Generator {
 
     static final int DEPTH = 15;
@@ -13,7 +16,6 @@ public class Generator {
     static final int[][] nCr = pascalsTriangle(DEPTH);
     static final int[][] comboSums = getComboSums(DEPTH);
     static final int[] posCount = getPositionCounts(DEPTH);
-    static int pos = 0;
 
     private static int[] getPositionCounts(int n) {
         int[] counts = new int[n + 1];
@@ -25,23 +27,57 @@ public class Generator {
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
-        solvePositions(0, 1, 11, 0);
-	System.out.println("Time: " + (System.currentTimeMillis() - start));
-        System.out.println(states.size());
-//        updateDatabase();
-	System.out.println("Positions: " + Solver.positions);
+        String board =  "   0   \n" +
+                        "   1   \n" +
+                        "   0   \n" +
+                        "   1   \n" +
+                        "   0   \n" +
+                        "   1   \n";
+        long state = encode(board);
+        int moves = board.length() - board.replaceAll("[01]", "").length();
+        int piece = (moves & 1) ^ 1;
+        System.out.println("Perfect Games: " + countPerfectGames(state, piece, moves));
+        System.out.println("Perfect Positions: " + perfectGameCounts.size());
+        System.out.println("Positions Evaluated: " + Solver.positions);
         System.out.println("Time: " + (System.currentTimeMillis() - start));
-        System.exit(0);
-        String board =  "     1 \n" +
-                        "   0 0 \n" +
-                        "   1 1 \n" +
-                        "   0 0 \n" +
-                        "   1 10\n" +
-                        " 110 10\n";
-//        byte[] lower = compileDatabase("C:\\Users\\josep\\IdeaProjects\\Connect4Bot\\src\\main\\resources\\connect4bot\\lowerBounds.bin", 15, (byte) Solver.WORST_EVAL);
-//        updateDatabase(lower, "lowerBoundDatabase.bin");
-//        byte[] upper = compileDatabase("C:\\Users\\josep\\IdeaProjects\\Connect4Bot\\src\\main\\resources\\connect4bot\\upperBounds.bin", 15, (byte) Solver.BEST_EVAL);
-//        updateDatabase(upper, "upperBoundDatabase.bin");
+    }
+
+    static HashMap<Long, Long> perfectGameCounts = new HashMap<>();
+
+    static long countPerfectGames() {
+        return countPerfectGames(0, 1, 0);
+    }
+
+    static long countPerfectGames(long state, int piece, int moves) {
+        if (isWin(state, piece ^ 1)) return 1L;
+        if (perfectGameCounts.containsKey(state)) return perfectGameCounts.get(state);
+        long count = 0;
+        for (long move : bestMoves(state, piece, moves)) {
+            count += countPerfectGames(move, piece ^ 1, moves + 1);
+        }
+        perfectGameCounts.put(state, count);
+        return count;
+    }
+
+    static ArrayList<Long> bestMoves(long state, int piece, int movesMade) {
+        ArrayList<Long> bestMoves = new ArrayList<>();
+        int maxEval = WORST_EVAL;
+        for (int j = 0; j < 7; j++) {
+            int col = MOVE_ORDER >>> j * 4 & 0b1111;
+            int height = (int) (state >>> 42 + col * 3 & 0b111);
+            if (height == 6) continue;
+            long move = nextState(state, piece, col, height);
+            int eval;
+            if (isWin(move, piece)) eval = 21 - (movesMade >>> 1);
+            else eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
+            if (eval > maxEval) {
+                bestMoves.clear();
+                bestMoves.add(move);
+                maxEval = eval;
+            }
+            else if (eval == maxEval && !bestMoves.contains(reflectState(move))) bestMoves.add(move);
+        }
+        return bestMoves;
     }
 
     static long encode(String board) {
@@ -87,7 +123,7 @@ public class Generator {
                 byte bound = bytes[i + 8];
                 int depth = Engine.depth(state);
                 database[getIndex(state, depth)] = bound;
-                database[getIndex(Engine.reflectState(state), depth)] = bound;
+                database[getIndex(reflectState(state), depth)] = bound;
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -114,21 +150,17 @@ public class Generator {
     static int count = 0;
 
     static void solvePositions(long state, int piece, int depth, int movesMade) {
-        if (depth == -1 || states.contains(state) || states.contains(Engine.reflectState(state))) return;
+        if (depth == -1 || states.contains(state) || states.contains(reflectState(state))) return;
         states.add(state);
         if(Engine.isWin(state, piece ^ 1)) return;
-//	int before = Solver.positions;
 //        System.out.println(decode(state));
-        byte eval = (byte) Solver.evaluatePosition(state, piece, Solver.WORST_EVAL, Solver.BEST_EVAL, movesMade);
-//	if (Solver.positions - 1 != before) System.out.println(decode(state));
+        int eval = Solver.evaluatePosition(state, piece, WORST_EVAL, Solver.BEST_EVAL, movesMade);
 //        System.out.println("Eval: " + eval);
-//	System.out.println("Positions: " + ++count);
+//	    System.out.println("Positions: " + ++count);
         int index = getIndex(state, movesMade);
-        Solver.lowerBoundDatabase[index] = eval;
-	Solver.upperBoundDatabase[index] = eval;
-        index = getIndex(Engine.reflectState(state), movesMade);
-        Solver.lowerBoundDatabase[index] = eval;
-	Solver.upperBoundDatabase[index] = eval;
+        Solver.lowerBoundDatabase[index] = (byte) Math.max(eval, Solver.lowerBoundDatabase[index]);
+        index = getIndex(reflectState(state), movesMade);
+        Solver.lowerBoundDatabase[index] = (byte) Math.max(eval, Solver.lowerBoundDatabase[index]);
         for (int i = 0; i < 7; i++) {
             int height = (int) (state >>> 42 + i * 3 & 0b111);
             if (height != 6) {
