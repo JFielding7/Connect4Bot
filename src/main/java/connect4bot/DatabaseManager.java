@@ -10,8 +10,8 @@ public class DatabaseManager {
     public static void main(String[] args) {
         splitDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
         splitDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
-//         mergeDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
- // 	 mergeDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
+        //mergeDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
+  	//mergeDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
     }
 
     static void splitDatabase(String file, int partitions) {
@@ -30,7 +30,7 @@ public class DatabaseManager {
     }
 
     static void mergeDatabase(String file, int partitions) {
-        try (FileOutputStream out = new FileOutputStream(file + "Merged.bin")) {
+        try (FileOutputStream out = new FileOutputStream(file + ".bin")) {
             for (int i = 0; i < partitions; i++) {
                 FileInputStream in = new FileInputStream(file + i + ".bin");
                 out.write(in.readAllBytes());

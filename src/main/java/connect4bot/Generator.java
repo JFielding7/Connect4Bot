@@ -13,6 +13,7 @@ public class Generator {
     static final int[][] nCr = pascalsTriangle(DEPTH);
     static final int[][] comboSums = getComboSums(DEPTH);
     static final int[] posCount = getPositionCounts(DEPTH);
+    static int pos = 0;
 
     private static int[] getPositionCounts(int n) {
         int[] counts = new int[n + 1];
@@ -24,10 +25,12 @@ public class Generator {
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
-        solvePositions(0, 1, 6, 0);
+        solvePositions(0, 1, 11, 0);
+	System.out.println("Time: " + (System.currentTimeMillis() - start));
         System.out.println(states.size());
-        // updateDatabase();
-        System.out.println(System.currentTimeMillis() - start);
+//        updateDatabase();
+	System.out.println("Positions: " + Solver.positions);
+        System.out.println("Time: " + (System.currentTimeMillis() - start));
         System.exit(0);
         String board =  "     1 \n" +
                         "   0 0 \n" +
@@ -114,14 +117,18 @@ public class Generator {
         if (depth == -1 || states.contains(state) || states.contains(Engine.reflectState(state))) return;
         states.add(state);
         if(Engine.isWin(state, piece ^ 1)) return;
-        System.out.println(decode(state));
-        int eval = Solver.evaluatePosition(state, piece, Solver.WORST_EVAL, Solver.BEST_EVAL, movesMade);
-        System.out.println("Eval: " + eval);
-	System.out.println("Positions: " + ++count);
+//	int before = Solver.positions;
+//        System.out.println(decode(state));
+        byte eval = (byte) Solver.evaluatePosition(state, piece, Solver.WORST_EVAL, Solver.BEST_EVAL, movesMade);
+//	if (Solver.positions - 1 != before) System.out.println(decode(state));
+//        System.out.println("Eval: " + eval);
+//	System.out.println("Positions: " + ++count);
         int index = getIndex(state, movesMade);
-        Solver.lowerBoundDatabase[index] = (byte) Math.max(eval, Solver.lowerBoundDatabase[index]);
+        Solver.lowerBoundDatabase[index] = eval;
+	Solver.upperBoundDatabase[index] = eval;
         index = getIndex(Engine.reflectState(state), movesMade);
-        Solver.lowerBoundDatabase[index] = (byte) Math.max(eval, Solver.lowerBoundDatabase[index]);
+        Solver.lowerBoundDatabase[index] = eval;
+	Solver.upperBoundDatabase[index] = eval;
         for (int i = 0; i < 7; i++) {
             int height = (int) (state >>> 42 + i * 3 & 0b111);
             if (height != 6) {

@@ -41,6 +41,7 @@ public class Solver {
      * The default order to search moves in
      */
     private static final int MOVE_ORDER = 3 + (2 << 4) + (4 << 8) + (5 << 12) + (1 << 16) + (6 << 20);
+    static long positions = 0;
 
     /**
      * Finds the minimax value of a position, within the window [alpha, beta]
@@ -52,6 +53,7 @@ public class Solver {
      * @return Minimax value of the position within [alpha, beta]
      */
     static int evaluatePosition(long state, int piece, int alpha, int beta, int movesMade) {
+	positions++;
         if (movesMade == 42) return 0;
         beta = Math.min(beta, 21 - (movesMade >>> 1));
         alpha = Math.max(alpha, (movesMade + 1 >>> 1) - 21);
