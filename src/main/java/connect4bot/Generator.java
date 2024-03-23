@@ -1,9 +1,9 @@
 package connect4bot;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static connect4bot.Engine.reflectState;
@@ -25,7 +25,7 @@ public class Generator {
         return counts;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         String board =  "   0   \n" +
                         "   1   \n" +
@@ -40,6 +40,7 @@ public class Generator {
         System.out.println("Perfect Positions: " + perfectGameCounts.size());
         System.out.println("Positions Evaluated: " + Solver.positions);
         System.out.println("Time: " + (System.currentTimeMillis() - start));
+        writeCacheToFile(perfectGameCounts, "perfectPositions.bin");
     }
 
     static HashMap<Long, Long> perfectGameCounts = new HashMap<>();
@@ -78,6 +79,42 @@ public class Generator {
             else if (eval == maxEval && !bestMoves.contains(reflectState(move))) bestMoves.add(move);
         }
         return bestMoves;
+    }
+
+    static void writeCacheToFile(HashMap<Long, Long> cache, String filename) {
+        byte[] bytes = new byte[cache.size() << 4];
+        int i = 0;
+        for (long position : cache.keySet()) {
+            for (int j = 0; j < 64; j+=8) {
+                bytes[i++] = (byte) (position >>> j & 255);
+            }
+            long count = cache.get(position);
+            for (int j = 0; j < 64; j+=8) {
+                bytes[i++] = (byte) (count >>> j & 255);
+            }
+        }
+        try (FileOutputStream out = new FileOutputStream(filename)) {
+            out.write(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static HashMap<Long, Long> loadCacheFromFile(String filename) throws IOException {
+        byte[] bytes = Files.readAllBytes(Paths.get(filename));
+        HashMap<Long, Long> cache = new HashMap<>();
+        for (int i = 0; i < bytes.length; i+=16) {
+            long position = 0;
+            for (int j = i; j < i + 8; j++) {
+                position += (long) (bytes[j] & 255) << (j - i << 3);
+            }
+            long count = 0;
+            for (int j = i + 8; j < i + 16; j++) {
+                count += (long) (bytes[j] & 255) << (j - i << 3);
+            }
+            cache.put(position, count);
+        }
+        return cache;
     }
 
     static long encode(String board) {
