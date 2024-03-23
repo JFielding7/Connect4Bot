@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static connect4bot.Engine.depth;
 import static connect4bot.Engine.reflectState;
 import static connect4bot.Solver.*;
 
@@ -27,12 +28,12 @@ public class Generator {
 
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
-        String board =  "   0   \n" +
-                        "   1   \n" +
-                        "   0   \n" +
-                        "   1   \n" +
-                        "   0   \n" +
-                        "   1   \n";
+        String board =  "       \n" +
+                        "       \n" +
+                        "       \n" +
+                        "       \n" +
+                        "       \n" +
+                        "       \n";
         long state = encode(board);
         int moves = board.length() - board.replaceAll("[01]", "").length();
         int piece = (moves & 1) ^ 1;
@@ -40,6 +41,11 @@ public class Generator {
         System.out.println("Perfect Positions: " + perfectGameCounts.size());
         System.out.println("Positions Evaluated: " + Solver.positions);
         System.out.println("Time: " + (System.currentTimeMillis() - start));
+        int[] depths = new int[43];
+        for (long position : perfectGameCounts.keySet()) {
+            depths[depth(position)]++;
+        }
+        System.out.println(Arrays.toString(depths));
         writeCacheToFile(perfectGameCounts, "perfectPositions.bin");
     }
 
@@ -50,7 +56,10 @@ public class Generator {
     }
 
     static long countPerfectGames(long state, int piece, int moves) {
-        if (isWin(state, piece ^ 1)) return 1L;
+        if (isWin(state, piece ^ 1)) {
+            perfectGameCounts.put(state, 1L);
+            return 1L;
+        }
         if (perfectGameCounts.containsKey(state)) return perfectGameCounts.get(state);
         long count = 0;
         for (long move : bestMoves(state, piece, moves)) {
@@ -80,21 +89,29 @@ public class Generator {
         }
         return bestMoves;
     }
-
+// 672421
     static void writeCacheToFile(HashMap<Long, Long> cache, String filename) {
-        byte[] bytes = new byte[cache.size() << 4];
-        int i = 0;
-        for (long position : cache.keySet()) {
-            for (int j = 0; j < 64; j+=8) {
-                bytes[i++] = (byte) (position >>> j & 255);
-            }
-            long count = cache.get(position);
-            for (int j = 0; j < 64; j+=8) {
-                bytes[i++] = (byte) (count >>> j & 255);
+        final int partition = 1 << 30;
+        int size = cache.size() << 4;
+        byte[][] bytes = new byte[(size - 1) / partition + 1][];
+        for (int i = 0; i < bytes.length - 1; i++) bytes[i] = new byte[partition];
+        int remaining = size & (partition - 1);
+        bytes[bytes.length - 1] = new byte[remaining == 0 ? partition : remaining];
+        int i = 0, a = 0;
+        for (long data : cache.keySet()) {
+            for (int x = 0; x < 2; x++) {
+                for (int j = 0; j < 64; j+=8) {
+                    bytes[a][i++] = (byte) (data >>> j & 255);
+                    if (i == partition) {
+                        i = 0;
+                        a++;
+                    }
+                }
+                if (x == 0) data = cache.get(data);
             }
         }
         try (FileOutputStream out = new FileOutputStream(filename)) {
-            out.write(bytes);
+            for (byte[] arr : bytes) out.write(arr);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
