@@ -54,7 +54,7 @@ public class Game {
      * @return The index of the column which the computer plays in
      */
     public int makeComputerMove() {
-        int col = makeOptimalMove(state, turn, movesMde);
+        int col = Solver.makeOptimalMove(state, turn, movesMde);
         playMove(col);
         return col;
     }

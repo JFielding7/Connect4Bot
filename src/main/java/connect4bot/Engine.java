@@ -90,6 +90,85 @@ public class Engine {
         return bestMoves.get(RNG.nextInt(bestMoves.size()));
     }
 
+    static int[] moveOrder = {3, 2, 4, 1, 5, 0, 6};
+    static long positionsEvaluated = 0;
+
+    static int evaluatePosition1(long state, int piece, int alpha, int beta, int movesMade) {
+        positionsEvaluated++;
+        if (movesMade == 42) return 0;
+        int index = (int) (state % SIZE);
+        if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValues[index]);
+        if (upperBoundCache[index] == state) beta = Math.min(beta, upperBoundValues[index]);
+        if (alpha >= beta) return alpha;
+        for (int col = 0; col < 7; col++) {
+            int height = (int) ((state >> 42 + col * 3) & 0b111);
+            if (height != 6) {
+                long move = nextState(state, piece, col, height);
+                if (isWin(move, piece)) return 21 - (movesMade >>> 1);
+                int moveIndex = (int) (move % SIZE);
+                if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValues[moveIndex]);
+                if (alpha >= beta) return alpha;
+            }
+        }
+        for (int col = 0; col < 7; col++) {
+            int height = (int) (state >>> 42 + col * 3 & 0b111);
+            if (height != 6) {
+                long move = nextState(state, piece, col, height);
+                int eval = -evaluatePosition1(move, piece ^ 1, -beta, -alpha, movesMade + 1);
+                alpha = Math.max(alpha, eval);
+                if (alpha >= beta) {
+                    lowerBoundCache[index] = state;
+                    lowerBoundValues[index] = alpha;
+                    return alpha;
+                }
+            }
+        }
+        upperBoundCache[index] = state;
+        upperBoundValues[index] = alpha;
+        return alpha;
+    }
+
+//    static int evaluatePosition1(long state, int piece, int alpha, int beta, int movesMade) {
+//        positionsEvaluated++;
+//        if (movesMade == 42) return 0;
+//        int index = (int) (state % SIZE);
+//        if (lowerBoundCache[index] == state) alpha = Math.max(alpha, lowerBoundValues[index]);
+//        if (upperBoundCache[index] == state) beta = Math.min(beta, upperBoundValues[index]);
+//        if (alpha >= beta) return alpha;
+//        for (int col : moveOrder) {
+//            int height = (int) ((state >> 42 + col * 3) & 0b111);
+//            if (height != 6) {
+//                long move = nextState(state, piece, col, height);
+//                if (isWin(move, piece)) return 21 - (movesMade >>> 1);
+//                int moveIndex = (int) (move % SIZE);
+//                if (upperBoundCache[moveIndex] == move) alpha = Math.max(alpha, -upperBoundValues[moveIndex]);
+//                if (alpha >= beta) return alpha;
+//            }
+//        }
+//        int i = 0;
+//        for (int col : moveOrder) {
+//            int height = (int) (state >>> 42 + col * 3 & 0b111);
+//            if (height != 6) {
+//                long move = nextState(state, piece, col, height);
+//                int eval;
+//                if (i++ == 0) eval = -evaluatePosition1(move, piece ^ 1, -beta, -alpha, movesMade + 1);
+//                else {
+//                    eval = -evaluatePosition1(move, piece ^ 1, -alpha - 1, -alpha, movesMade + 1);
+//                    if (eval > alpha && eval < beta) eval = -evaluatePosition1(move, piece ^ 1, -beta, -alpha, movesMade + 1);
+//                }
+//                alpha = Math.max(alpha, eval);
+//                if (alpha >= beta) {
+//                    lowerBoundCache[index] = state;
+//                    lowerBoundValues[index] = alpha;
+//                    return alpha;
+//                }
+//            }
+//        }
+//        upperBoundCache[index] = state;
+//        upperBoundValues[index] = alpha;
+//        return alpha;
+//    }
+
     /**
      * Finds the minimax value of a position, within the window [alpha, beta]
      * @param state The current position
