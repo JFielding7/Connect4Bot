@@ -8,10 +8,10 @@ import java.io.IOException;
 public class DatabaseManager {
 
     public static void main(String[] args) {
-        splitDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
-        splitDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
-        //mergeDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
-  	//mergeDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
+//        splitDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase", 4);
+//        splitDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase", 4);
+        mergeDatabase("upperBoundDatabase", 4);
+  	    mergeDatabase("lowerBoundDatabase", 4);
     }
 
     static void splitDatabase(String file, int partitions) {

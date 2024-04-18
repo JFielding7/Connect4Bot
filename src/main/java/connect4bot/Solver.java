@@ -26,7 +26,7 @@ public class Solver {
     /**
      * The size of the cache of positions
      */
-    static final int SIZE = 30_000_001;
+    static final int SIZE = 524289;
     /**
      * Caches containing the positions
      */
@@ -35,13 +35,58 @@ public class Solver {
      * Caches containing the upper and lower bounds of their respective positions
      */
     static byte[] lowerBoundValues = new byte[SIZE], upperBoundValues = new byte[SIZE];
-    static byte[] upperBoundDatabase = loadDatabase("/home/jpfielding/Connect4Bot/upperBoundDatabase.bin");
-    static byte[] lowerBoundDatabase = loadDatabase("/home/jpfielding/Connect4Bot/lowerBoundDatabase.bin");
+    static byte[] upperBoundDatabase = loadDatabase("upperBoundDatabase.bin");
+    static byte[] lowerBoundDatabase = loadDatabase("lowerBoundDatabase.bin");
+//    static byte[] upperBoundDatabase = new byte[(int) Generator.positionsCount(DATABASE_DEPTH)];
+//    static byte[] lowerBoundDatabase = new byte[(int) Generator.positionsCount(DATABASE_DEPTH)];
     /**
      * The default order to search moves in
      */
-    private static final int MOVE_ORDER = 3 + (2 << 4) + (4 << 8) + (5 << 12) + (1 << 16) + (6 << 20);
+    static final int MOVE_ORDER = 3 + (2 << 4) + (4 << 8) + (5 << 12) + (1 << 16) + (6 << 20);
     static long positions = 0;
+    private static final Random RNG = new Random();
+
+    static int makeOptimalMove(long state, int piece, int movesMade) {
+        ArrayList<Integer> bestMoves = new ArrayList<>();
+        int maxEval = WORST_EVAL, i = 0;
+        for (int j = 0; j < 7; j++) {
+            int col = MOVE_ORDER >>> j * 4 & 0b1111;
+            int height = (int) (state >>> 42 + col * 3 & 0b111);
+//            if (height == 6 || col == 3 && movesMade == 1) continue;
+            long move = nextState(state, piece, col, height);
+            if (isWin(move, piece)) return col;
+            int eval;
+            if (i == 0) eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
+            else {
+                if (maxEval < 0) {
+                    eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, BEST_EVAL, movesMade + 1);
+                    if (eval == -2) eval = -1;
+                }
+                else {
+                    eval = -evaluatePosition(move, piece ^ 1, -maxEval - 1, -maxEval, movesMade + 1);
+                    if (eval > maxEval) eval = -evaluatePosition(move, piece ^ 1, WORST_EVAL, -maxEval, movesMade + 1);
+                    else continue;
+                }
+            }
+            if (eval > maxEval) {
+                bestMoves.clear();
+                bestMoves.add(col);
+                maxEval = eval;
+            }
+            else if (eval == maxEval) bestMoves.add(col);
+            i++;
+        }
+        return bestMoves.get(RNG.nextInt(bestMoves.size()));
+    }
+
+    public static void main(String[] args) {
+        Arrays.fill(lowerBoundDatabase, (byte) WORST_EVAL);
+        Arrays.fill(upperBoundDatabase, (byte) BEST_EVAL);
+        long start = System.currentTimeMillis();
+        System.out.println(evaluatePosition(0, 1, -1, 1, 0));
+        System.out.println(System.currentTimeMillis() - start);
+        System.out.println(positions);
+    }
 
     /**
      * Finds the minimax value of a position, within the window [alpha, beta]
@@ -53,7 +98,7 @@ public class Solver {
      * @return Minimax value of the position within [alpha, beta]
      */
     static int evaluatePosition(long state, int piece, int alpha, int beta, int movesMade) {
-	positions++;
+        positions++;
         if (movesMade == 42) return 0;
         beta = Math.min(beta, 21 - (movesMade >>> 1));
         alpha = Math.max(alpha, (movesMade + 1 >>> 1) - 21);
